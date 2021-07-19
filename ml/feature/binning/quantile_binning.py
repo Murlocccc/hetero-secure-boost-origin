@@ -1,5 +1,6 @@
 
 
+from ml.utils.logger import LOGGER
 from ml.feature.binning.base_binning import Binning
 from ml.param.feature_binning_param import FeatureBinningParam
 from computing.d_table import DTable
@@ -46,9 +47,8 @@ class QuantileBinning(Binning):
                                   cols_dict=self.cols_dict,
                                   header=self.header,
                                   is_sparse=is_sparse)
-            # summary_dict = data_instances.mapReducePartitions(f, self.mer)
-            # summary_dict = data_instances.mapPartitions(f)
-            # summary_dict = summary_dict.reduce(self.merge_summary_dict)
+            summary_dict = data_instances.mapPartitions(f)
+            summary_dict = summary_dict.reduce(self.merge_summary_dict)
             if is_sparse:
                 total_count = data_instances.count()
                 for _, summary_obj in summary_dict.items():
@@ -63,6 +63,10 @@ class QuantileBinning(Binning):
             split_point = []
             for percentile_rate in percentile_rates:
                 s_p = summary.query(percentile_rate)
+                if s_p not in split_point:
+                    split_point.append(s_p)
+            split_points[col_name] = split_point
+        self.split_points = split_points
 
     @staticmethod
     def approxiQuantile(data_instances, params, cols_dict, abnormal_list, header, is_sparse) -> dict:
@@ -122,12 +126,13 @@ class QuantileBinning(Binning):
         for _, summary_obj in summary_dict.items():
             summary_obj.compress()
 
-        return summary_dict
+        return [summary_dict]
 
     @staticmethod
     def insert_datas(data_instances, summary_dict, cols_dict, header, is_sparse):
 
-        for iter_key, instance in data_instances:
+        # print('type is ', type(data_instances))
+        for _, instance in data_instances:
             if not is_sparse:
                 if type(instance).__name__ == 'Instance':
                     features = instance.features
