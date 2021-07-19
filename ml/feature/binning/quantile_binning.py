@@ -46,7 +46,7 @@ class QuantileBinning(Binning):
                                   cols_dict=self.cols_dict,
                                   header=self.header,
                                   is_sparse=is_sparse)
-            summary_dict = data_instances.mapReducePartitions(f, self.mer)
+            # summary_dict = data_instances.mapReducePartitions(f, self.mer)
             # summary_dict = data_instances.mapPartitions(f)
             # summary_dict = summary_dict.reduce(self.merge_summary_dict)
             if is_sparse:
