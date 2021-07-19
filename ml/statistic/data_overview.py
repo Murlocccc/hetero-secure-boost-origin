@@ -1,5 +1,6 @@
 import types
 from computing.d_table import DTable
+from ml.utils.logger import LOGGER
 
 
 def get_features_shape(data_instances: DTable):
@@ -23,3 +24,18 @@ def is_sparse_data(data_instances: DTable) -> bool:
         return False
     else:
         return True
+
+def rubbish_clear(rubbish_list):
+    """
+    Temporary procession for resource recovery. This will be discarded in next version because of our new resource recovery plan
+    Parameter
+    ----------
+    rubbish_list: list of DTable, each DTable in this will be destroy
+    """
+    for r in rubbish_list:
+        try:
+            if r is None:
+                continue
+            r.destroy()
+        except Exception as e:
+            LOGGER.warning("destroy Dtable error,:{}, but this can be ignored sometimes".format(e))

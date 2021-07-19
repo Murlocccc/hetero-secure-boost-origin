@@ -11,7 +11,7 @@ def test_hetero_secure_boost_guest():
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
 
     # 从文件读取数据
-    header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
+    header, ids, features, lables = read_from_csv('breast_hetero_mini_guest.csv')
     instances = []
     for i, feature in enumerate(features):
         inst = Instance(inst_id=ids[i], features=feature, label=lables[i])
