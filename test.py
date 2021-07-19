@@ -1,9 +1,11 @@
-from computing.d_table import DTbale
+from computing.d_table import DTable
+# from ml.tree.hetero_secureboosting_tree_guest import HeteroSecureBoostingTreeGuest
+from i_o.utils import read_from_csv
 
 # 通过
 def test_subtractByKey():
-    t1 = DTbale(False, [5,6,7])
-    t2 = DTbale(True, [(0,3),(2,'asd'),('tt','pp')])
+    t1 = DTable(False, [5,6,7])
+    t2 = DTable(True, [(0,3),(2,'asd'),('tt','pp')])
 
     t3 = t1.subtractByKey(t2)
 
@@ -13,8 +15,8 @@ def test_subtractByKey():
 
 # 通过
 def test_union():
-    t1 = DTbale(False, [5,6,7])
-    t2 = DTbale(True, [(0,3),(2,'asd'),('tt','pp')])
+    t1 = DTable(False, [5,6,7])
+    t2 = DTable(True, [(0,3),(2,'asd'),('tt','pp')])
 
     def func(a, b):
         return str(a) + str(b)
@@ -29,8 +31,8 @@ def test_union():
 
 # 通过
 def test_join():
-    t1 = DTbale(False, [5,6,7])
-    t2 = DTbale(True, [(0,3),(2,'asd'),('tt','pp')])
+    t1 = DTable(False, [5,6,7])
+    t2 = DTable(True, [(0,3),(2,'asd'),('tt','pp')])
 
     def func(a, b):
         return str(a) + str(b)
@@ -45,7 +47,7 @@ def test_join():
 
 # 通过
 def test_filter():
-    t1 = DTbale(True, [(0,3),(2,'asd'),('tt','pp')])
+    t1 = DTable(True, [(0,3),(2,'asd'),('tt','pp')])
 
     def key_is_int(k, v):
         return isinstance(k, int)
@@ -62,7 +64,7 @@ def test_filter():
 
 # 通过
 def test_reduce():
-    t1 = DTbale(False, list(range(100)))
+    t1 = DTable(False, list(range(100)))
 
     reduce_ans = t1.reduce(lambda v1, v2: v1 + v2)
 
@@ -70,7 +72,7 @@ def test_reduce():
 
 # 通过
 def test_count():
-    t1 = DTbale(False, list(range(100)))
+    t1 = DTable(False, list(range(100)))
 
     count_ans = t1.count()
 
@@ -78,7 +80,7 @@ def test_count():
 
 # 通过
 def test_first():
-    t1 = DTbale(True, [(0,3),(2,'asd'),('tt','pp')])
+    t1 = DTable(True, [(0,3),(2,'asd'),('tt','pp')])
 
     first_ans = t1.first()
 
@@ -86,7 +88,7 @@ def test_first():
 
 # 通过
 def test_take():
-    t1 = DTbale(True, [(0,3),(2,'asd'),('tt','pp')])
+    t1 = DTable(True, [(0,3),(2,'asd'),('tt','pp')])
 
     take_ans_1 = t1.take(0)
     take_ans_2 = t1.take(2)
@@ -100,7 +102,7 @@ def test_take():
 
 # 通过
 def test_map():
-    t1 = DTbale(False, [5,6,7])
+    t1 = DTable(False, [5,6,7])
 
     def func(k, v):
         return k + v ** 2
@@ -112,7 +114,7 @@ def test_map():
 
 # 通过
 def test_mapValues():
-    t1 = DTbale(False, [5,6,7])
+    t1 = DTable(False, [5,6,7])
 
     def func(v):
         return v ** 2
@@ -122,5 +124,45 @@ def test_mapValues():
     print('t1 is ', t1)
     print('t2 is ', t2)
 
+# 通过
+def test_mapReducePartitions():
+    t1 = DTable(True, [(1, 2), (2, 3), (3, 4), (4, 5)])
+
+    def mapper(L: list):
+        new_table = []
+        for k, v in L:
+            if k <= 2:
+                k = 2
+            else:
+                k = 3
+            new_table.append((k, v))
+        return new_table
+    
+    def reducer(a, b):
+        return a + b
+    
+    t2 = t1.mapReducePartitions(mapper, reducer)
+
+    print('t1 is ', t1)
+    print('t2 is ', t2)
+
+# 通过
+def test_read_from_csv():
+    # data = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
+    header, ids, features, lables = read_from_csv('breast_hetero_mini_guest.csv')
+    print(header)
+    print()
+    print(ids)
+    print()
+    print(features)
+    print()
+    print(lables)
+
+# 
+# def testHeteroSecureBoostTree():
+#     heteroSecureBoostingTreeGuest = HeteroSecureBoostingTreeGuest()
+#     data_insts = DTbale()
+
+
 if __name__ == '__main__':
-    test_mapValues()
+    test_read_from_csv()

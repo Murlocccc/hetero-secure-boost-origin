@@ -28,9 +28,9 @@ class CTableABC(abc.ABC):
     def mapValues(self, func: typing.Callable):
         ...
     
-    # @abc.abstractmethod
-    # def mapReducePartitions(self, mapper: typing.Callable, reducer: typing.Callable, **kargs):
-    #     ...
+    @abc.abstractmethod
+    def mapReducePartitions(self, mapper: typing.Callable, reducer: typing.Callable, **kargs):
+        ...
 
     @abc.abstractmethod
     def reduce(self, func: typing.Callable):
@@ -61,5 +61,4 @@ class CTableABC(abc.ABC):
     @schema.setter
     def schema(self, value: typing.Dict):
         setattr(self, '_schema', value)
-
     pass

@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-from param.base_param import BaseParam
+from ml.param.base_param import BaseParam
 
 
 class EncryptedModeCalculatorParam(BaseParam):

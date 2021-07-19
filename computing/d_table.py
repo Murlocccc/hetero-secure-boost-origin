@@ -2,7 +2,7 @@ from computing._computing import CTableABC
 import typing
 import copy
 
-class DTbale(CTableABC):
+class DTable(CTableABC):
     
     def __init__(self, include_key: bool, data: typing.List=None) -> None:
         super().__init__()
@@ -33,7 +33,7 @@ class DTbale(CTableABC):
                         self.__data[i] = item
 
     def __str__(self) -> str:
-        return str(self.__data)
+        return str(self.schema) + '\n' + str(self.__data)
     
     def __repr__(self) -> str:
         return self.__str__()
@@ -53,7 +53,7 @@ class DTbale(CTableABC):
             return None
         else:
             k = list(self.__data.keys())[0]
-            return (k, self.__data[k])
+            return self.__data[k]
 
     def count(self) -> int:
         return len(self.__data)
@@ -62,13 +62,23 @@ class DTbale(CTableABC):
         new_table = []
         for k, v in self.__data.items():
             new_table.append((k, func(k, v)))
-        return DTbale(True, new_table)
+        return DTable(True, new_table)
     
     def mapValues(self, func: typing.Callable):
         new_table = []
         for k, v in self.__data.items():
             new_table.append((k, func(v)))
-        return DTbale(True, new_table)
+        return DTable(True, new_table)
+
+    def mapReducePartitions(self, mapper: typing.Callable, reducer: typing.Callable, **kargs):
+        map_list = mapper(self.__data.items())
+        new_dict = {}
+        for k, v in map_list:
+            if k not in new_dict:
+                new_dict[k] = v
+            else:
+                new_dict[k] = reducer(new_dict[k], v)
+        return DTable(True, list(new_dict.items()))
 
     def reduce(self, func: typing.Callable):
         ret_val = None
@@ -84,14 +94,14 @@ class DTbale(CTableABC):
         for k, v in self.__data.items():
             if func(k, v) == True:
                 new_table.append((k, v))
-        return DTbale(True, new_table)
+        return DTable(True, new_table)
 
     def join(self, other, func: typing.Callable=lambda v1, v2: v1):
         new_table = []
         for k, v in other.get_kvs():
             if k in self.__data:
                 new_table.append((k, func(self.__data[k], v)))
-        return DTbale(True, new_table)
+        return DTable(True, new_table)
 
     def union(self, other, func: typing.Callable=lambda v1, v2: v1):
         new_dict = copy.deepcopy(self.__data)
@@ -100,14 +110,14 @@ class DTbale(CTableABC):
                 new_dict[k] = func(new_dict[k], v)
             else:
                 new_dict[k] = v
-        return DTbale(True, list(new_dict.items()))
+        return DTable(True, list(new_dict.items()))
 
     def subtractByKey(self, other):
         new_table = []
         for k, v in self.__data.items():
             if k not in other.get_keys():
                 new_table.append((k, v))
-        return DTbale(True, new_table)
+        return DTable(True, new_table)
     
     def get_keys(self) -> typing.KeysView:
         return self.__data.keys()
