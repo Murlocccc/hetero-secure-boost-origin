@@ -38,6 +38,9 @@ class DTable(CTableABC):
     def __repr__(self) -> str:
         return self.__str__()
     
+    def collect(self, **kargs) -> typing.Generator:
+        return self.__data.items()
+
     def take(self, n: int=1, **kargs) -> list:
         ret_val = []
         for i, k in enumerate(self.__data.keys()):
@@ -70,13 +73,21 @@ class DTable(CTableABC):
             new_table.append((k, func(v)))
         return DTable(True, new_table)
 
+    def mapPartitions(self, func: typing.Callable):
+        new_table = func(self.__data.items())
+        return DTable(False, new_table)
+
     def mapReducePartitions(self, mapper: typing.Callable, reducer: typing.Callable, **kargs):
         map_list = mapper(self.__data.items())
+        print(map_list)
         new_dict = {}
         for k, v in map_list:
+            print('k = ', k)
+            print('v = ', v)
             if k not in new_dict:
                 new_dict[k] = v
             else:
+                print('type of v is ',type(v))
                 new_dict[k] = reducer(new_dict[k], v)
         return DTable(True, list(new_dict.items()))
 

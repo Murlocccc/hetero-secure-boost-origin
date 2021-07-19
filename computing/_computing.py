@@ -4,9 +4,9 @@ import typing
 
 class CTableABC(abc.ABC):
 
-    # @abc.abstractmethod
-    # def collect(self, **kargs) -> typing.Generator:
-    #     ...
+    @abc.abstractmethod
+    def collect(self, **kargs) -> typing.Generator:
+        ...
 
     @abc.abstractmethod
     def take(self, n: int =1, **kargs) -> list:
@@ -28,6 +28,10 @@ class CTableABC(abc.ABC):
     def mapValues(self, func: typing.Callable):
         ...
     
+    @abc.abstractmethod
+    def mapPartitions(self, func:typing.Callable):
+        ...
+
     @abc.abstractmethod
     def mapReducePartitions(self, mapper: typing.Callable, reducer: typing.Callable, **kargs):
         ...
