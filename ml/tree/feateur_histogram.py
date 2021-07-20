@@ -28,6 +28,7 @@ import functools
 import copy
 import numpy as np
 from ml.utils.logger import LOGGER
+from computing.d_table import DTable
 
 
 class FeatureHistogram(object):
@@ -35,7 +36,7 @@ class FeatureHistogram(object):
         pass
 
     @staticmethod
-    def accumulate_histogram(histograms:list):
+    def accumulate_histogram(histograms):
         for i in range(len(histograms)):
             for j in range(len(histograms[i])):
                 for k in range(1, len(histograms[i][j])):
@@ -45,9 +46,17 @@ class FeatureHistogram(object):
         return histograms
 
     @staticmethod
-    def calculate_histogram(data_bin, grad_and_hess,
+    def calculate_histogram(data_bin: DTable, grad_and_hess,
                             bin_split_points:np.array, bin_sparse_points:list,
                             valid_features:list=None, node_map:dict=None):
+        
+        # print('data_bin_with_node_dispatch is \n', data_bin)
+        # print('grad_and_hess is \n', grad_and_hess)
+        # print('bin_split_points is \n', bin_split_points)
+        # print('bin_sparse_points is \n', bin_sparse_points)
+        # print('valid_features is \n', valid_features)
+        # print('node_map is \n', node_map)
+
         LOGGER.info("bin_shape is {}, node num is {}".format(bin_split_points.shape, len(node_map)))
         batch_histogram_cal = functools.partial(
             FeatureHistogram.batch_calculate_histogram,
@@ -143,4 +152,4 @@ class FeatureHistogram(object):
                     node_histograms[nid][fid][sparse_point][1] += zero_opt_node_sum[nid][1] - zero_optim[nid][fid][1]
                     node_histograms[nid][fid][sparse_point][2] += zero_opt_node_sum[nid][2] - zero_optim[nid][fid][2]
 
-        return node_histograms
+        return [node_histograms]

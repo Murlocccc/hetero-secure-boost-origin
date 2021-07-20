@@ -15,7 +15,6 @@ class BoostingTree(ModelBase):
         self.task_type=None
         self.objective_param = None
         self.learning_rate = None
-        self.learning_rate = None
         self.num_trees = None
         self.subsample_feature_rate = None
         self.n_iter_no_change = None
