@@ -6,6 +6,7 @@ from ml.utils import consts
 from ml.feature.sparse_vector import SparseVector
 from ml.model_base import ModelBase
 from ml.utils import abnormal_detection
+from federation.transfer_inst import TransferInstGuest, TransferInstHost
 
 
 class BoostingTree(ModelBase):
@@ -28,7 +29,7 @@ class BoostingTree(ModelBase):
         self.feature_name_fid_mapping = {}
         self.role = ''
         self.mode = consts.HETERO
-
+        self.transfer_inst = None
         self.model_param = BoostingTreeParam()
 
     def _init_model(self, boostingtree_param):
@@ -104,3 +105,6 @@ class BoostingTree(ModelBase):
 
     def save_model(self):
         pass
+
+    def set_transfer_inst(self, transfer_inst):
+        self.transfer_inst = transfer_inst
