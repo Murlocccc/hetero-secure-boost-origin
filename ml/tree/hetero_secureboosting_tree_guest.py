@@ -183,8 +183,13 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
              loss_method.compute_hess(y, f_val)))
 
     def sync_tree_dim(self):
+        LOGGER.info("sync tree dim to host")
         # TODO
-        pass
+        # federation.remote(obj=self.tree_dim,
+        #                   name=self.transfer_inst.tree_dim.name,
+        #                   tag=self.transfer_inst.generate_transferid(self.transfer_inst.tree_dim),
+        #                   role=consts.HOST,
+        #                   idx=-1)
 
     def sync_stop_flag(self, stop_flag, num_round):
         LOGGER.info("sync stop flag to host, boosting round is {}".format(num_round))
@@ -235,7 +240,6 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
         LOGGER.debug("schema is {}".format(data_instances.schema))
-        LOGGER.debug("feature_name_fid_mapping is {}".format(self.feature_name_fid_mapping))
         data_instances = self.data_alignment(data_instances)
         LOGGER.debug_data(data_instances)
         self.convert_feature_to_bin(data_instances)
