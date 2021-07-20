@@ -5,7 +5,7 @@ from ml.feature.binning.base_binning import Binning
 from ml.param.feature_binning_param import FeatureBinningParam
 from computing.d_table import DTable
 from ml.statistic import data_overview
-from ml.feature.quantile_summary import QuantileSummaries, SparseQuantileSummaries
+from ml.feature.quantile_summaries import QuantileSummaries, SparseQuantileSummaries
 import functools
 
 class QuantileBinning(Binning):
