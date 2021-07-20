@@ -68,7 +68,7 @@ class TransferInstGuest(TransferInst):
 
 
 class TransferInstHost(TransferInst):
-    def __init__(self,ip: int, port: int) -> None:
+    def __init__(self,ip: str='127.0.0.1', port: int=12345) -> None:
         super().__init__()
 
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
