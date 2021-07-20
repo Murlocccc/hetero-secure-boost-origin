@@ -47,7 +47,6 @@ def test_hetero_secure_boost_guest():
 
     print('accuracy is ', accuracy)
 
-
 def data_split(full_list, ratio, shuffle=False):
     """
     数据集拆分: 将列表full_list按比例ratio（随机）划分为2个子列表sublist_1与sublist_2
