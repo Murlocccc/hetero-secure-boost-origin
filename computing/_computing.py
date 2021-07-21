@@ -5,7 +5,7 @@ import typing
 class CTableABC(abc.ABC):
 
     @abc.abstractmethod
-    def collect(self, **kargs) -> typing.Generator:
+    def collect(self, **kargs) -> typing.Iterator:
         ...
 
     @abc.abstractmethod
