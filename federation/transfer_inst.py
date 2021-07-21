@@ -1,5 +1,6 @@
 import socket
 import pickle
+from ml.utils.logger import LOGGER
 
 class TransferInst:
     def __init__(self) -> None:
@@ -9,20 +10,40 @@ class TransferInst:
     def send_data(cs, data):
         byteStream = pickle.dumps(data)
         length = len(byteStream)
-        byteStream = bytes(f"{length:<16}", 'utf-8')+byteStream
+        LOGGER.debug('len of send_msg is {}'.format(length))
+
+        # byteStream = bytes(f"{length:<16}", 'utf-8')+byteStream
+
+        # cs.sendall(byteStream)
+
+        cs.sendall(bytes(f"{length:<16}", 'utf-8'))
+
         cs.sendall(byteStream)
     
     @staticmethod
     def recv_data(cs):
-        msg = cs.recv(1024)
+        # msg = cs.recv(1024)
+        # length = int(msg[:16])
+        # # LOGGER.debug('len of recv_msg is {}'.format(length))
+        # full_msg = b''
+        # full_msg += msg[16:]
+        # nowsize = len(full_msg)
+        # while nowsize < length:
+        #     more = cs.recv(length - nowsize)
+        #     full_msg = full_msg + more
+        #     nowsize += len(more)
+
+        msg = cs.recv(16)
         length = int(msg[:16])
+        LOGGER.debug('len of recv_msg is {}'.format(length))
         full_msg = b''
-        full_msg += msg[16:]
         nowsize = len(full_msg)
         while nowsize < length:
             more = cs.recv(length - nowsize)
             full_msg = full_msg + more
             nowsize += len(more)
+
+        LOGGER.debug('true len of recv_msg is {}'.format(length))
         return pickle.loads(full_msg)
 
 
