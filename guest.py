@@ -9,18 +9,22 @@ import random
 
 def test_hetero_secure_boost_guest():
 
+    # guest传输实体
+    transfer_inst = TransferInstGuest()
+
     hetero_secure_boost_guest = HeteroSecureBoostingTreeGuest()
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
+    hetero_secure_boost_guest.set_transfer_inst(transfer_inst)
 
     # 从文件读取数据，并划分训练集和测试集
     # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
-    header, ids, features, lables = read_from_csv('data/breast_hetero/breast_hetero_guest.csv')
+    header, ids, features, lables = read_from_csv_with_lable('data/breast_hetero/breast_hetero_guest.csv')
     instances = []
     for i, feature in enumerate(features):
         inst = Instance(inst_id=ids[i], features=feature, label=lables[i])
         instances.append(inst)
     
-    train_instances, test_instances = data_split(instances, 0.7, True)
+    train_instances, test_instances = data_split(instances, 0.8, True, 2)
     
 
     # 生成DTable
@@ -48,7 +52,7 @@ def test_hetero_secure_boost_guest():
 
     print('accuracy is ', accuracy)
 
-def data_split(full_list, ratio, shuffle=False):
+def data_split(full_list, ratio, shuffle=False, random_seed=None):
     """
     数据集拆分: 将列表full_list按比例ratio（随机）划分为2个子列表sublist_1与sublist_2
     :param full_list: 数据列表
@@ -61,6 +65,8 @@ def data_split(full_list, ratio, shuffle=False):
     if n_total == 0 or offset < 1:
         return [], full_list
     if shuffle:
+        if random_seed is not None:
+            random.seed(random_seed)
         random.shuffle(full_list)
     sublist_1 = full_list[:offset]
     sublist_2 = full_list[offset:]
@@ -91,4 +97,4 @@ def heteto_sbt_guest():
     hetero_secure_boost_guest.fit(data_instances=data_instances)
 
 if __name__ == '__main__':
-    heteto_sbt_guest()
+    test_hetero_secure_boost_guest()

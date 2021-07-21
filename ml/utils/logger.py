@@ -3,7 +3,7 @@ class LOGGER:
 
     mask = {
         'info': True,
-        'debug': True,
+        'debug': False,
         'debug_data': False,
         'warning': True,
     }

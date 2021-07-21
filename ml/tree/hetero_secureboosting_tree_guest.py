@@ -195,7 +195,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
 
     def sync_stop_flag(self, stop_flag, num_round):
         LOGGER.info("sync stop flag to host, boosting round is {}".format(num_round))
-        self.self.transfer_inst.send_data_to_hosts(stop_flag, -1)
+        self.transfer_inst.send_data_to_hosts(stop_flag, -1)
         
         # federation.remote(obj=stop_flag,
         #                   name=self.transfer_inst.stop_flag.name,
@@ -266,6 +266,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 tree_inst.set_encrypter(self.encrypter)
                 tree_inst.set_encrypted_mode_calculator(self.encrypted_calculator)
                 tree_inst.set_flowid(self.generate_flowid(i, tidx))
+                tree_inst.set_transfer_inst(self.transfer_inst)
                 
                 tree_inst.fit()
 
@@ -305,6 +306,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 tree_inst.load_model(self.tree_meta, self.trees_[i * self.tree_dim + tidx])
                 # tree_inst.set_tree_model(self.trees_[i * self.tree_dim + tidx])
                 tree_inst.set_flowid(self.generate_flowid(i, tidx))
+                tree_inst.set_transfer_inst(self.transfer_inst)
 
                 predict_data = tree_inst.predict(data_instances)
                 self.update_f_value(new_f=predict_data, tidx=tidx)

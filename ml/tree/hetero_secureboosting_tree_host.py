@@ -49,6 +49,10 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         for i in range(len(header)):
             self.feature_name_fid_mapping[header[i]] = i
 
+    def generate_flowid(self, round_num, tree_num):
+        LOGGER.info("generate flowid, flowid {}".format(self.flowid))
+        return ".".join(map(str, [self.flowid, round_num, tree_num]))
+
     def sync_tree_dim(self):
         LOGGER.info("sync tree dim from guest")
         self.tree_dim = self.transfer_inst.recv_data_from_guest()
@@ -87,6 +91,7 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
                 tree_inst.set_flowid(self.generate_flowid(i, tidx))
                 tree_inst.set_runtime_idx(self.runtime_idx)
                 tree_inst.set_valid_features(valid_features)
+                tree_inst.set_transfer_inst(self.transfer_inst)
 
                 tree_inst.fit()
                 tree_meta, tree_param = tree_inst.get_model()
@@ -116,6 +121,7 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
                 # tree_inst.set_tree_model(self.trees_[i * self.tree_dim + tidx])
                 tree_inst.set_flowid(self.generate_flowid(i, tidx))
                 tree_inst.set_runtime_idx(self.runtime_idx)
+                tree_inst.set_transfer_inst(self.transfer_inst)
 
                 tree_inst.predict(data_instances)
 

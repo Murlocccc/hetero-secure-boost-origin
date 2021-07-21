@@ -37,7 +37,7 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def set_flowid(self, flowid=0):
         LOGGER.info("set flowid, flowid is {}".format(flowid))
-        self.transfer_inst.set_flowid(flowid)
+        # self.transfer_inst.set_flowid(flowid)
 
     def set_runtime_idx(self, runtime_idx):
         self.runtime_idx = runtime_idx
@@ -80,7 +80,7 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_encrypted_grad_and_hess(self):
         LOGGER.info("get encrypted grad and hess")
-        # TODO
+        self.grad_and_hess = self.transfer_inst.recv_data_from_guest()
         # self.grad_and_hess = federation.get(name=self.transfer_inst.encrypted_grad_and_hess.name,
         #                                     tag=self.transfer_inst.generate_transferid(
         #                                         self.transfer_inst.encrypted_grad_and_hess),
@@ -88,7 +88,8 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_tree_node_queue(self, dep=-1):
         LOGGER.info("get tree node queue of depth {}".format(dep))
-        # TODO
+        self.tree_node_queue = self.transfer_inst.recv_data_from_guest()
+        
         # self.tree_node_queue = federation.get(name=self.transfer_inst.tree_node_queue.name,
         #                                       tag=self.transfer_inst.generate_transferid(
         #                                           self.transfer_inst.tree_node_queue, dep),
@@ -96,12 +97,13 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_node_positions(self, dep=-1):
         LOGGER.info("get tree node queue of depth {}".format(dep))
-        # TODO
+
+        node_positions = self.transfer_inst.recv_data_from_guest()
         # node_positions = federation.get(name=self.transfer_inst.node_positions.name,
         #                                 tag=self.transfer_inst.generate_transferid(self.transfer_inst.node_positions,
         #                                                                            dep),
         #                                 idx=0)
-        # return node_positions
+        return node_positions
 
     def get_histograms(self, node_map={}):
         LOGGER.info("start to get node histograms")
@@ -117,7 +119,9 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_encrypted_splitinfo_host(self, encrypted_splitinfo_host, dep=-1, batch=-1):
         LOGGER.info("send encrypted splitinfo of depth {}, batch {}".format(dep, batch))
-        # TODO
+        
+        self.transfer_inst.send_data_to_guest(encrypted_splitinfo_host)
+
         # federation.remote(obj=encrypted_splitinfo_host,
         #                   name=self.transfer_inst.encrypted_splitinfo_host.name,
         #                   tag=self.transfer_inst.generate_transferid(self.transfer_inst.encrypted_splitinfo_host, dep,
@@ -127,13 +131,15 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_federated_best_splitinfo_host(self, dep=-1, batch=-1):
         LOGGER.info("get federated best splitinfo of depth {}, batch {}".format(dep, batch))
-        # TODO
+        
+        federated_best_splitinfo_host = self.transfer_inst.recv_data_from_guest()
+
         # federated_best_splitinfo_host = federation.get(name=self.transfer_inst.federated_best_splitinfo_host.name,
         #                                                tag=self.transfer_inst.generate_transferid(
         #                                                    self.transfer_inst.federated_best_splitinfo_host, dep,
         #                                                    batch),
         #                                                idx=0)
-        # return federated_best_splitinfo_host
+        return federated_best_splitinfo_host
 
     def sync_final_splitinfo_host(self, splitinfo_host, federated_best_splitinfo_host, dep=-1, batch=-1):
         LOGGER.info("send host final splitinfo of depth {}, batch {}".format(dep, batch))
@@ -152,7 +158,8 @@ class HeteroDecisionTreeHost(DecisionTree):
 
             final_splitinfos.append(splitinfo)
 
-        # TODO
+        self.transfer_inst.send_data_to_guest(final_splitinfos)
+
         # federation.remote(obj=final_splitinfos,
         #                   name=self.transfer_inst.final_splitinfo_host.name,
         #                   tag=self.transfer_inst.generate_transferid(self.transfer_inst.final_splitinfo_host, dep,
@@ -162,12 +169,14 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_dispatch_node_host(self, dep):
         LOGGER.info("get node from host to dispath, depth is {}".format(dep))
-        # TODO
+        
+        dispatch_node_host = self.transfer_inst.recv_data_from_guest()
+
         # dispatch_node_host = federation.get(name=self.transfer_inst.dispatch_node_host.name,
         #                                     tag=self.transfer_inst.generate_transferid(
         #                                         self.transfer_inst.dispatch_node_host, dep),
         #                                     idx=0)
-        # return dispatch_node_host
+        return dispatch_node_host
 
     @staticmethod
     def dispatch_node(value1, value2, sitename=None, decoder=None,
@@ -186,7 +195,9 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_dispatch_node_host_result(self, dispatch_node_host_result, dep=-1):
         LOGGER.info("send host dispatch result, depth is {}".format(dep))
-        # TDDO
+        
+        self.transfer_inst.send_data_to_guest(dispatch_node_host_result)
+
         # federation.remote(obj=dispatch_node_host_result,
         #                   name=self.transfer_inst.dispatch_node_host_result.name,
         #                   tag=self.transfer_inst.generate_transferid(self.transfer_inst.dispatch_node_host_result, dep),
@@ -205,7 +216,9 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_tree(self):
         LOGGER.info("sync tree from guest")
-        # TODO
+        
+        self.tree_ = self.transfer_inst.recv_data_from_guest()
+
         # self.tree_ = federation.get(name=self.transfer_inst.tree.name,
         #                             tag=self.transfer_inst.generate_transferid(self.transfer_inst.tree),
         #                             idx=0)
@@ -254,26 +267,32 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def sync_predict_finish_tag(self, recv_times):
         LOGGER.info("get the {}-th predict finish tag from guest".format(recv_times))
-        # TODO
+        
+        finish_tag = self.transfer_inst.recv_data_from_guest()
+
         # finish_tag = federation.get(name=self.transfer_inst.predict_finish_tag.name,
         #                             tag=self.transfer_inst.generate_transferid(self.transfer_inst.predict_finish_tag,
         #                                                                        recv_times),
         #                             idx=0)
-        # return finish_tag
+        return finish_tag
 
     def sync_predict_data(self, recv_times):
         LOGGER.info("srecv predict data to host, recv times is {}".format(recv_times))
-        # TODO
+        
+        predict_data = self.transfer_inst.recv_data_from_guest()
+
         # predict_data = federation.get(name=self.transfer_inst.predict_data.name,
         #                               tag=self.transfer_inst.generate_transferid(self.transfer_inst.predict_data,
         #                                                                          recv_times),
         #                               idx=0)
 
-        # return predict_data
+        return predict_data
 
     def sync_data_predicted_by_host(self, predict_data, send_times):
         LOGGER.info("send predicted data by host, send times is {}".format(send_times))
-        # TODO
+        
+        self.transfer_inst.send_data_to_guest(predict_data)
+
         # federation.remote(obj=predict_data,
         #                   name=self.transfer_inst.predict_data_by_host.name,
         #                   tag=self.transfer_inst.generate_transferid(self.transfer_inst.predict_data_by_host,
@@ -306,7 +325,6 @@ class HeteroDecisionTreeHost(DecisionTree):
 
                 splitinfo_host, encrypted_splitinfo_host = self.splitter.find_split_host(acc_histograms,
                                                                                          self.valid_features,
-                                                                                         self.data_bin._partitions,
                                                                                          self.sitename)
 
                 self.sync_encrypted_splitinfo_host(encrypted_splitinfo_host, dep, batch)

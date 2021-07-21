@@ -1,17 +1,10 @@
 from federation.transfer_inst import TransferInstGuest
+from computing.d_table import DTable
 
-transfer_inst = TransferInstGuest(10086,2)
+transfer_inst = TransferInstGuest(10086)
 
-info = {'name': 'bupt'}
-asd = {'name': 'beijing'}
-ans = {
-    1: info,
-    2: asd,
-}
+ans = DTable(False, [1,2,3,4,5])
 
-# transfer_inst.send_data_to_hosts(ans, -1)
+transfer_inst.send_data_to_hosts(ans, -1)
 
-datas = transfer_inst.recv_data_from_hosts(-1)
-
-print(datas)
 

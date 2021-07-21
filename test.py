@@ -1,6 +1,6 @@
 from computing.d_table import DTable
 # from ml.tree.hetero_secureboosting_tree_guest import HeteroSecureBoostingTreeGuest
-from i_o.utils import read_from_csv
+from i_o.utils import read_from_csv_with_lable
 
 # 通过
 def test_subtractByKey():
@@ -149,7 +149,7 @@ def test_mapReducePartitions():
 # 通过
 def test_read_from_csv():
     # data = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
-    header, ids, features, lables = read_from_csv('breast_hetero_mini_guest.csv')
+    header, ids, features, lables = read_from_csv_with_lable('breast_hetero_mini_guest.csv')
     print(header)
     print()
     print(ids)
@@ -165,4 +165,10 @@ def test_read_from_csv():
 
 
 if __name__ == '__main__':
-    test_read_from_csv()
+    # test_read_from_csv()
+    l1 = [1,2,3]
+    l2 = ['a','b','c']
+    l3 = zip(l1,l2)
+    l4 = list(l3)
+    print('l3 is ', l3)
+    print('l4 is ', l4)

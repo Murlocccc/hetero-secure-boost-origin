@@ -37,9 +37,13 @@ class DecisionTree(object):
         self.feature_importance_type = tree_param.feature_importance_type
         self.n_iter_no_change = tree_param.n_iter_no_change
         self.tol = tree_param.tol
+        self.transfer_inst = None
 
     def fit(self):
         raise NotImplementedError("fit method should overload")
 
     def predict(self, data_inst):
         raise NotImplementedError("fit method should overload")
+    
+    def set_transfer_inst(self, transfer_inst):
+        self.transfer_inst = transfer_inst
