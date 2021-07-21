@@ -411,24 +411,21 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return encrypted_grad_and_hess
 
     def find_best_split_guest_and_host(self, splitinfo_guest_host):
-        # TODO
-        # best_gain_host = self.decrypt(splitinfo_guest_host[1].gain)
-        # best_gain_host_idx = 1
-        # for i in range(1, len(splitinfo_guest_host)):
-        #     gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
-        #     if best_gain_host < gain_host_i:
-        #         best_gain_host = gain_host_i
-        #         best_gain_host_idx = i
+        best_gain_host = self.decrypt(splitinfo_guest_host[1].gain)
+        best_gain_host_idx = 1
+        for i in range(1, len(splitinfo_guest_host)):
+            gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
+            if best_gain_host < gain_host_i:
+                best_gain_host = gain_host_i
+                best_gain_host_idx = i
 
-        # if splitinfo_guest_host[0].gain >= best_gain_host - consts.FLOAT_ZERO:
-        #     best_splitinfo = splitinfo_guest_host[0]
-        # else:
-        #     best_splitinfo = splitinfo_guest_host[best_gain_host_idx]
-        #     best_splitinfo.sum_grad = self.decrypt(best_splitinfo.sum_grad)
-        #     best_splitinfo.sum_hess = self.decrypt(best_splitinfo.sum_hess)
-        #     best_splitinfo.gain = best_gain_host
-
-        best_splitinfo = splitinfo_guest_host[0]
+        if splitinfo_guest_host[0].gain >= best_gain_host - consts.FLOAT_ZERO:
+            best_splitinfo = splitinfo_guest_host[0]
+        else:
+            best_splitinfo = splitinfo_guest_host[best_gain_host_idx]
+            best_splitinfo.sum_grad = self.decrypt(best_splitinfo.sum_grad)
+            best_splitinfo.sum_hess = self.decrypt(best_splitinfo.sum_hess)
+            best_splitinfo.gain = best_gain_host
 
         return best_splitinfo
 
