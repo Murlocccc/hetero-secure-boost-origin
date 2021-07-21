@@ -3,9 +3,9 @@ class LOGGER:
 
     mask = {
         'info': True,
-        'debug': False,
+        'debug': True,
         'debug_data': False,
-        'warning': True,
+        'warning': False,
     }
 
     @classmethod

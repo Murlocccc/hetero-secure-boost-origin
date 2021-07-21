@@ -337,6 +337,7 @@ class HeteroDecisionTreeHost(DecisionTree):
             self.find_dispatch(dispatch_node_host, dep)
 
         self.sync_tree()
+        # LOGGER.debug('len of tree_ is {}'.format(len(self.tree_)))
         self.convert_bin_to_real()
 
         LOGGER.info("end to fit guest decision tree")
@@ -391,6 +392,10 @@ class HeteroDecisionTreeHost(DecisionTree):
                                   is_leaf=node.is_leaf,
                                   left_nodeid=node.left_nodeid,
                                   right_nodeid=node.right_nodeid)
+        
+        model_param.split_maskdict.update(self.split_maskdict)
+
+        return model_param
 
     def load_model(self, model_meta=None, model_param=None):
         LOGGER.info("load tree model")

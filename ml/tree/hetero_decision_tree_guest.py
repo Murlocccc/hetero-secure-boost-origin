@@ -502,6 +502,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             self.redispatch_node(dep)
         
         self.sync_tree()
+        # LOGGER.debug('len of tree_ is {}'.format(len(self.tree_)))
         self.convert_bin_to_real()
         tree_ = self.tree_
         LOGGER.info("tree node num is %d" % len(tree_))
