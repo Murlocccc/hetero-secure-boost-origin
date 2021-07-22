@@ -48,10 +48,12 @@ class TransferInst:
 
 
 class TransferInstGuest(TransferInst):
-    def __init__(self, port: int=12345, conn_num: int=1, max_conn_num: int=5) -> None:
+    def __init__(self, port: int=12345, conn_num: int=1) -> None:
         super().__init__()
 
         self.conns = []
+
+        max_conn_num = conn_num + 1
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(('', port))
