@@ -1,6 +1,6 @@
 
 ## boosting_tree_model_meta_pb2.py
-这个文件里面的类用来存储决策树的元信息，包括树的最大深度、最小样本分裂等
+这个文件里面的类用来存储决策树的元信息，包括树的最大深度、最小样本分裂、分裂规则等
 
 
 ## boosting_tree_model_param_pb2.py
