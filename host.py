@@ -1,8 +1,9 @@
 # role：host
-# start parameters：3
+# start parameters：4
 #   - the address of csv file
 #   - the proportion of data divided
 #   - the port of guest
+#   - the run_time_idx, it should be different among hosts
 
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_host import HeteroSecureBoostingTreeHost
@@ -23,6 +24,7 @@ def test_hetero_seucre_boost_host():
     csv_address = argv[0]
     divided_proportion = float(argv[1])
     port = int(argv[2])
+    run_time_idx = int(argv[3])
 
     # host传输实体
     transfer_inst = TransferInstHost(port=port)
@@ -30,6 +32,7 @@ def test_hetero_seucre_boost_host():
     hetero_secure_boost_host = HeteroSecureBoostingTreeHost()
     hetero_secure_boost_host._init_model(hetero_secure_boost_host.model_param)
     hetero_secure_boost_host.set_transfer_inst(transfer_inst)
+    hetero_secure_boost_host.set_runtime_idx(run_time_idx)
 
     # 从文件读取数据，并划分训练集和测试集
     # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')

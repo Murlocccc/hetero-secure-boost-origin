@@ -12,7 +12,7 @@ pycryptodomex==3.10.1
 six==1.16.0
 ```
 
-## 启动
+## 启动示例
 
 ### guest 方
 ```
@@ -21,7 +21,7 @@ python .\guest.py data/breast_hetero/breast_hetero_guest.csv 1 0.8 CLASSIFICATIO
 
 ### host 方
 ```
-python .\host.py data/breast_hetero/breast_hetero_host.csv 0.8 10086
+python .\host.py data/breast_hetero/breast_hetero_host.csv 0.8 10086 0
 ```
 
 <!--requirements.txt 里的gmpy2可以在[这里](https://www.lfd.uci.edu/~gohlke/pythonlibs/#gmpy)下载对应版本的wheel，然后在pip install 这个wheel
