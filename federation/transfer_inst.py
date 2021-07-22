@@ -62,6 +62,18 @@ class TransferInstGuest(TransferInst):
             self.conns.append(client_socket)
     
     def send_data_to_hosts(self, data, index: int):
+        """
+        send data to host according to the index
+
+        Parameters
+        ----------
+        data
+            object to send
+        index: int
+            the index of the host, -1 means the data will be send to all hosts
+
+        """
+
         if index == -1:  # 转发列表中有所有的连接
             conns = self.conns  
         elif index < len(self.conns) and index >= 0:  # 转发列表中只有一个连接
@@ -73,6 +85,20 @@ class TransferInstGuest(TransferInst):
             self.send_data(conn, data)
     
     def recv_data_from_hosts(self, index):
+        """
+        receive data from host according to the index
+
+        Parameters
+        ----------
+        index: int
+            the index of the host, -1 means the data will be received from all hosts
+
+        Returns
+        -------
+        data
+            a list of object received if index == -1 else a object
+
+        """
 
         data = None
 
@@ -96,8 +122,27 @@ class TransferInstHost(TransferInst):
         self.client_socket.connect((ip, port))
     
     def send_data_to_guest(self, data):
+        """
+        send data to guest
+
+        Parameters
+        ----------
+        data
+            the object to send
+
+        """
         self.send_data(self.client_socket, data)
     
     def recv_data_from_guest(self):
+        """
+        receive data from host according to the index
+
+        Returns
+        -------
+        data
+            the object received
+
+        """
+
         data = self.recv_data(self.client_socket)
         return data
