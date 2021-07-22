@@ -2,27 +2,28 @@ import numpy as np
 
 def read_from_csv_with_lable(csv_address: str):
     """
-    从带标签文件读取数据
+    read data from the csv file with lable
 
     Parameters
     ----------
     csv_address: str
-        文件路径
+        the address of the csv file
     
     Returns
     -------
     header:
-        list,特征对应的表头
+        list of featrue_name
     ids:
-        list，id的列表
+        list of id
     features:
-        list，特征的列表，其中特征为numpy.ndarray类型
+        list of features
     lables:
-        list,标签的列表
+        list of lable
 
     Notes
     -----
-    csv的第一列会被识别为id列，第二列会被识别为标签列
+    the first column of the csv file will be recognized as the id_col
+    the second column of the csv file will be recognized as the lable_col
     """
 
     rows = []
@@ -57,25 +58,25 @@ def read_from_csv_with_lable(csv_address: str):
 
 def read_from_csv_with_no_lable(csv_address: str):
     """
-    从不带标签文件读取数据
+    read data from the csv file with no lable
 
     Parameters
     ----------
     csv_address: str
-        文件路径
+        the address of the csv file
     
     Returns
     -------
     header:
-        list,特征对应的表头
+        list of featrue_name
     ids:
-        list，id的列表
+        list of id
     features:
-        list，特征的列表，其中特征为numpy.ndarray类型
+        list of features
 
     Notes
     -----
-    csv的第一列会被识别为id列
+    the first column of the csv file will be recognized as the id_col
     """
 
     rows = []
