@@ -13,7 +13,7 @@ class Splitter():
         if not isinstance(criterion_method, str):
             raise TypeError("criterion_method type should be str, but %s find" % (type(criterion_method).__name__))
 
-        if criterion_method == "xgboost":
+        if criterion_method == "xgboost": 
             if not criterion_params:
                 self.criterion = XgboostCriterion()
             else:

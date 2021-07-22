@@ -26,7 +26,7 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
     def convert_feature_to_bin(self, data_instances):
         LOGGER.info("convert feature to bins")
         param_obj = FeatureBinningParam(bin_num=self.bin_num)
-        binning_obj = QuantileBinning(param_obj)
+        binning_obj = QuantileBinning(param_obj) 
         binning_obj.fit_split_points(data_instances)
         self.data_bin, self.bin_split_points, self.bin_sparse_points = binning_obj.convert_feature_to_bin(data_instances)
         LOGGER.info("convert feature to bins over")

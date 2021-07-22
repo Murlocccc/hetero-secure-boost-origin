@@ -337,7 +337,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 raise NotImplementedError("objective {} not supprted yet".format(self.objective_param.objective))
             predict_result = data_instances.join(predicts, lambda inst, pred: [inst.label, float(pred), float(pred), {"label": float(pred)}])
         else:
-            raise NotImplementedError("task type {} not supported yet".format(self.task_type))
+            raise NotImplementedError("task type {} not supported yet".format(self.task_type)) 
         
         LOGGER.info("end predict")
 
