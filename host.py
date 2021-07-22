@@ -1,3 +1,9 @@
+# role：host
+# start parameters：3
+#   - the address of csv file
+#   - the proportion of data divided
+#   - the port of guest
+
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_host import HeteroSecureBoostingTreeHost
 from i_o.utils import read_from_csv_with_no_lable
@@ -5,11 +11,21 @@ from ml.feature.instance import Instance
 from ml.utils.logger import LOGGER
 from federation.transfer_inst import TransferInstHost
 import random
+import sys
+
+def getArgs():
+    argv = sys.argv[1:]
+    return argv
 
 def test_hetero_seucre_boost_host():
 
+    argv = getArgs()
+    csv_address = argv[0]
+    divided_proportion = float(argv[1])
+    port = int(argv[2])
+
     # host传输实体
-    transfer_inst = TransferInstHost()
+    transfer_inst = TransferInstHost(port=port)
     
     hetero_secure_boost_host = HeteroSecureBoostingTreeHost()
     hetero_secure_boost_host._init_model(hetero_secure_boost_host.model_param)
@@ -17,13 +33,13 @@ def test_hetero_seucre_boost_host():
 
     # 从文件读取数据，并划分训练集和测试集
     # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
-    header, ids, features= read_from_csv_with_no_lable('data/breast_hetero/breast_hetero_host.csv')
+    header, ids, features= read_from_csv_with_no_lable(csv_address)
     instances = []
     for i, feature in enumerate(features):
         inst = Instance(inst_id=ids[i], features=feature)
         instances.append(inst)
     
-    train_instances, test_instances = data_split(instances, 0.8, True, 2)
+    train_instances, test_instances = data_split(instances, divided_proportion, True, 2)
     
 
     # 生成DTable

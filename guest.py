@@ -1,30 +1,58 @@
+# role：guest
+# start parameters：5
+#   - the address of csv file
+#   - the number of hosts
+#   - the proportion of data divided
+#   - the type of the task, only support 'CLASSIFICATION'
+#   - the port for federation
+
+
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_guest import HeteroSecureBoostingTreeGuest
 from i_o.utils import read_from_csv_with_lable
 from ml.feature.instance import Instance
 from ml.utils.logger import LOGGER
 from federation.transfer_inst import TransferInstGuest
+from ml.utils import consts
 import random
+import sys
 
+def getArgs():
+    argv = sys.argv[1:]
+    return argv
 
 def test_hetero_secure_boost_guest():
 
+    argv = getArgs()
+    csv_address = argv[0]
+    num_hosts = int(argv[1])
+    divided_proportion = float(argv[2])
+    task_type = argv[3]
+    port = int(argv[4])
+
     # guest传输实体
-    transfer_inst = TransferInstGuest()
+    transfer_inst = TransferInstGuest(port, num_hosts)
 
     hetero_secure_boost_guest = HeteroSecureBoostingTreeGuest()
+    if task_type == 'CLASSIFICATION':
+        hetero_secure_boost_guest.model_param.task_type = consts.CLASSIFICATION
+    # elif task_type == 'REGRESSION':
+    #     hetero_secure_boost_guest.model_param.task_type = consts.REGRESSION
+    else:
+        raise ValueError('the value of param task_type wrong')
+
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
     hetero_secure_boost_guest.set_transfer_inst(transfer_inst)
 
     # 从文件读取数据，并划分训练集和测试集
     # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
-    header, ids, features, lables = read_from_csv_with_lable('data/breast_hetero/breast_hetero_guest.csv')
+    header, ids, features, lables = read_from_csv_with_lable(csv_address)
     instances = []
     for i, feature in enumerate(features):
         inst = Instance(inst_id=ids[i], features=feature, label=lables[i])
         instances.append(inst)
     
-    train_instances, test_instances = data_split(instances, 0.8, True, 2)
+    train_instances, test_instances = data_split(instances, divided_proportion, True, 2)
     
 
     # 生成DTable
