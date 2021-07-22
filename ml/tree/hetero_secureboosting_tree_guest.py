@@ -242,9 +242,9 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
     def fit(self, data_instances:DTable):
         LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
-        LOGGER.debug("schema is {}".format(data_instances.schema))
+        # LOGGER.debug("schema is {}".format(data_instances.schema))
         data_instances = self.data_alignment(data_instances)
-        LOGGER.debug_data(data_instances)
+        # LOGGER.debug_data(data_instances)
         self.convert_feature_to_bin(data_instances)
         self.set_y()
         self.update_f_value()
