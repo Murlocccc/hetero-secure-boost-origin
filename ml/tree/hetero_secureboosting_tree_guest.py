@@ -319,11 +319,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             loss_method = self.loss
             classes_ = self.classes_
             if self.num_classes == 2:
-                # print(self.F)
-                # print('---------------------------------------------------------------------------')
                 predicts = self.F.mapValues(lambda f: float(loss_method.predict(f)))
-                # print(predicts)
-                # print('---------------------------------------------------------------------------')
                 threshold = self.predict_param.threshold
                 predict_result = data_instances.join(predicts, lambda inst, pred: [inst.label, classes_[1] if pred > threshold else classes_[0], pred, {"0": 1 - pred, "1": pred}])
             else:
