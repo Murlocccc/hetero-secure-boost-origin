@@ -6,22 +6,66 @@ class CTableABC(abc.ABC):
 
     @abc.abstractmethod
     def collect(self, **kargs) -> typing.Iterator:
+        """
+        Returns
+        -------
+        generator
+           generator of data
+        """
         ...
 
     @abc.abstractmethod
     def take(self, n: int =1, **kargs) -> list:
+        """
+        take ``n`` data from table
+
+        Parameters
+        ----------
+        n: int
+          number of data to take
+
+        Returns
+        -------
+        list
+           a list of ``n`` data
+
+        Notes
+        ------
+        no order guarantee
+        """
         ...
 
     @abc.abstractmethod
     def first(self, **kargs):
+        """
+        take one data from table
+
+        Returns
+        -------
+        object
+          a data from table
+
+        Notes
+        ------
+        no order guarantee
+        """
         ...
     
     @abc.abstractmethod
     def count(self) -> int:
+        """
+        number of data in table
+
+        Returns
+        -------
+        int
+           number of data
+        """
         ...
     
     @abc.abstractmethod
     def map(self, func: typing.Callable) -> 'CTableABC':
+        
         ...
     
     @abc.abstractmethod
