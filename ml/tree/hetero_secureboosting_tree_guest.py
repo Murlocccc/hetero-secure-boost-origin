@@ -240,7 +240,6 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             self.F = self.F.join(new_f, accumuldate_f)
 
     def fit(self, data_instances:DTable):
-        random.seed(3)
         LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
         # LOGGER.debug("schema is {}".format(data_instances.schema))
@@ -291,7 +290,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 else:
                     self.sync_stop_flag(False, i)
 
-            LOGGER.debug("history loss is {}".format(self.history_loss))
+            LOGGER.debug("history loss is {}".format(min(self.history_loss)))
 
             LOGGER.info("end to train secureboosting guest model")
 

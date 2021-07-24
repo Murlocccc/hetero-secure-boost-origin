@@ -60,8 +60,6 @@ class Splitter():
                     gain = self.criterion.split_gain([sum_grad, sum_hess],
                                                      [sum_grad_l, sum_hess_l], [sum_grad_r, sum_hess_r])
 
-                    # print(gain, 'f_id = {}, b_id = {}, sum_gl = {}, sum_hl = {}'.format(fid, bid, sum_grad_l, sum_hess_l))
-
                     if gain > self.min_impurity_split and gain > best_gain:
                         best_gain = gain
                         best_fid = fid

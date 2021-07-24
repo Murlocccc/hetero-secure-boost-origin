@@ -1,6 +1,5 @@
 
 
-from numpy.random.mtrand import rand
 from ml.tree.boosting_tree import BoostingTree
 from ml.utils.logger import LOGGER
 from ml.utils import consts
@@ -77,7 +76,6 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         return stop_flag
 
     def fit(self, data_instances):
-        random.seed(3)
         LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
         LOGGER.debug("schema is {}".format(data_instances.schema))

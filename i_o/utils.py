@@ -49,8 +49,8 @@ def read_from_csv_with_lable(csv_address: str):
 
         vals = rows[i].split(',')
 
-        lables.append(float(vals.pop(lable_pos)))
-        ids.append(int(vals.pop(id_pos)))
+        lables.append(vals.pop(lable_pos))
+        ids.append(vals.pop(id_pos))
         vals = [float(val) for val in vals]
         features.append(np.array(vals))
 
@@ -98,7 +98,7 @@ def read_from_csv_with_no_lable(csv_address: str):
 
         vals = rows[i].split(',')
 
-        ids.append(int(vals.pop(id_pos)))
+        ids.append(vals.pop(id_pos))
         vals = [float(val) for val in vals]
         features.append(np.array(vals))
 

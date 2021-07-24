@@ -4,26 +4,17 @@ from computing.d_table import DTable
 from ml.feature.instance import Instance
 import random
 import numpy as np
-import functools
 
 
 
 def test():
 
     hetero_secure_boost_guest = HeteroSecureBoostingTreeGuest()
-    hetero_secure_boost_guest.model_param.subsample_feature_rate = 1
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
-
-    
-
     header, ids, features, lables = read_from_csv_with_lable('data/vehicle_scale_hetero/vehicle_scale_hetero_guest.csv')
     header2, ids2, features2 = read_from_csv_with_no_lable('data/vehicle_scale_hetero/vehicle_scale_hetero_host.csv')
-
-    # header, ids, features, lables = read_from_csv_with_lable('data/vehicle_scale_hetero/vehicle_scale_hetero_guest.csv')
-    # header2, ids2, features2 = read_from_csv_with_no_lable('data/vehicle_scale_hetero/vehicle_scale_hetero_host.csv')
     header.extend(header2)
     
-
 
     instances = []
     for i, feature in enumerate(features):
@@ -32,12 +23,6 @@ def test():
         instances.append(inst)
     
     train_instances, test_instances = data_split(instances, 0.8, True, 2)
-
-    # ids = [a.inst_id for a in train_instances]
-
-    # print(sorted(ids))
-
-    # return
     
 
     # 生成DTable
@@ -62,9 +47,6 @@ def test():
         return [correct_num / len(kvs)]
 
     accuracy = predict_result.mapPartitions(func).reduce(lambda a, b: a + b)
-    # print('num is ', predict_result.count())
-
-    # print(predict_result)
 
     print('accuracy is ', accuracy)
 

@@ -43,12 +43,6 @@ class Node(object):
         self.left_nodeid = left_nodeid
         self.right_nodeid = right_nodeid
 
-    def __str__(self) -> str:
-        return str(self.__dict__)
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
 
 class SplitInfo(object):
     def __init__(self, sitename=consts.GUEST, best_fid:int=None, best_bid:int=None,
@@ -59,9 +53,3 @@ class SplitInfo(object):
         self.sum_grad = sum_grad
         self.sum_hess = sum_hess
         self.gain = gain
-    
-    def __str__(self) -> str:
-        return str(self.__dict__)
-
-    def __repr__(self) -> str:
-        return self.__str__()

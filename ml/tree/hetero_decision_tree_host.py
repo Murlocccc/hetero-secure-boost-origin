@@ -60,7 +60,6 @@ class HeteroDecisionTreeHost(DecisionTree):
             return val
 
         if etype == "feature_val":
-            return val
             self.split_maskdict[nid] = val
             return None
 
@@ -72,7 +71,6 @@ class HeteroDecisionTreeHost(DecisionTree):
             return val
 
         if dtype == "feature_val":
-            return val
             if nid in split_maskdict:
                 return split_maskdict[nid]
             else:
@@ -146,7 +144,7 @@ class HeteroDecisionTreeHost(DecisionTree):
     def sync_final_splitinfo_host(self, splitinfo_host, federated_best_splitinfo_host, dep=-1, batch=-1):
         LOGGER.info("send host final splitinfo of depth {}, batch {}".format(dep, batch))
         final_splitinfos = []
-        for i in range(len(splitinfo_host)):  # 遍历结点
+        for i in range(len(splitinfo_host)):
             best_idx, best_gain = federated_best_splitinfo_host[i]
             if best_idx != -1:
                 assert splitinfo_host[i][best_idx].sitename == self.sitename
