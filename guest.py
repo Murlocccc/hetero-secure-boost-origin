@@ -7,6 +7,10 @@
 #   - the port for federation
 
 
+# example:
+#   python .\guest.py data/breast_hetero/breast_hetero_guest.csv 1 0.8 CLASSIFICATION 10086
+
+
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_guest import HeteroSecureBoostingTreeGuest
 from i_o.utils import read_from_csv_with_lable
@@ -33,6 +37,10 @@ def test_hetero_secure_boost_guest():
     # guest传输实体
     transfer_inst = TransferInstGuest(port, num_hosts)
 
+    random_seed = random.randint(1,1000)
+
+    transfer_inst.send_data_to_hosts(random_seed, -1)
+
     hetero_secure_boost_guest = HeteroSecureBoostingTreeGuest()
     if task_type == 'CLASSIFICATION':
         hetero_secure_boost_guest.model_param.task_type = consts.CLASSIFICATION
@@ -41,18 +49,28 @@ def test_hetero_secure_boost_guest():
     else:
         raise ValueError('the value of param task_type wrong')
 
+    hetero_secure_boost_guest.model_param.subsample_feature_rate = 1
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
+    
     hetero_secure_boost_guest.set_transfer_inst(transfer_inst)
 
     # 从文件读取数据，并划分训练集和测试集
     # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
     header, ids, features, lables = read_from_csv_with_lable(csv_address)
     instances = []
+
     for i, feature in enumerate(features):
         inst = Instance(inst_id=ids[i], features=feature, label=lables[i])
         instances.append(inst)
     
     train_instances, test_instances = data_split(instances, divided_proportion, True, 2)
+    # hetero_secure_boost_guest.model_param.subsample_feature_rate = 1
+
+    # ids = [a.inst_id for a in train_instances]
+
+    # print(sorted(ids))
+
+    # return
     
 
     # 生成DTable
@@ -74,10 +92,14 @@ def test_hetero_secure_boost_guest():
         for _, v in kvs:
             if v[0] == v[1]:
                 correct_num += 1
+        print(correct_num)
         return [correct_num / len(kvs)]
+
+    # print(predict_result)
 
     accuracy = predict_result.mapPartitions(func).reduce(lambda a, b: a + b)
 
+    # print('num is ', predict_result.count())
     print('accuracy is ', accuracy)
 
 def data_split(full_list, ratio, shuffle=False, random_seed=None):

@@ -2,8 +2,8 @@
 class LOGGER:
 
     mask = {
-        'info': True,
-        'debug': True,
+        'info': False,
+        'debug': False,
         'debug_data': False,
         'warning': False,
     }

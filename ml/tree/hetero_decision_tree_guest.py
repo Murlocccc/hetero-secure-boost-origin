@@ -1,4 +1,5 @@
 
+from ml.feature.quantile_summaries import SparseQuantileSummaries
 from computing.d_table import DTable
 from numpy import log
 from ml.tree.decision_tree import DecisionTree
@@ -6,13 +7,13 @@ from ml.param.boosting_tree_param import BoostingTreeParam
 from ml.utils.logger import LOGGER
 from ml.tree.splitter import Splitter
 from ml.utils import consts
-from ml.tree.node import Node
+from ml.tree.node import Node, SplitInfo
 from ml.tree.feateur_histogram import FeatureHistogram
 from arch.api.boosting_tree_model_meta_pb2 import DecisionTreeModelMeta, CriterionMeta
 from arch.api.boosting_tree_model_param_pb2 import DecisionTreeModelParam
 import copy
 import functools
-
+import os
 
 class HeteroDecisionTreeGuest(DecisionTree):
     def __init__(self, tree_param: BoostingTreeParam):
@@ -97,6 +98,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         for i in range(len(self.tree_node_queue)):
             sum_grad = self.tree_node_queue[i].sum_grad
             sum_hess = self.tree_node_queue[i].sum_hess
+            LOGGER.debug('gain is {}'.format(splitinfos[i].gain))
             if max_depth_reach or splitinfos[i].gain <= \
                     self.min_impurity_split + consts.FLOAT_ZERO:
                 self.tree_node_queue[i].is_leaf = True
@@ -145,9 +147,11 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return acc_histograms
 
     def encrypt(self, val):
+        # return val
         return self.encrypter.encrypt(val)
 
     def decrypt(self, val):
+        # return val
         return self.encrypter.decrypt(val)
 
     def encode(self, etype="feature_idx", val=None, nid=None):
@@ -213,6 +217,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
             gain = self.splitter.split_gain(sum_grad, sum_hess, sum_grad_l,
                                             sum_hess_l, sum_grad_r, sum_hess_r)
 
+            # print(gain)
+
             if gain > self.min_impurity_split and gain > best_gain:
                 best_gain = gain
                 best_idx = i
@@ -232,6 +238,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             best_splitinfo_host = [splitinfo[1] for splitinfo in splitinfos]
 
             self.sync_federated_best_splitinfo_host(best_splitinfo_host, dep, batch, i)
+        
 
     def sync_final_split_host(self, dep=-1, batch=-1):
         LOGGER.info("get host final splitinfo of depth {}, batch {}".format(dep, batch))
@@ -407,14 +414,17 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
     def encrypt_grad_and_hess(self):
         LOGGER.info("start to encrypt grad and hess")
-        encrypted_grad_and_hess = self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
-        return encrypted_grad_and_hess
+        # return self.grad_and_hess
+        return self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
+        
 
     def find_best_split_guest_and_host(self, splitinfo_guest_host):
         best_gain_host = self.decrypt(splitinfo_guest_host[1].gain)
         best_gain_host_idx = 1
+        # print('len is ', len(splitinfo_guest_host))
         for i in range(1, len(splitinfo_guest_host)):
             gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
+            # print(splitinfo_guest_host[i].gain, 'f_id = {}, b_id = {}'.format(splitinfo_guest_host[i].best_fid, splitinfo_guest_host[i].best_bid))
             if best_gain_host < gain_host_i:
                 best_gain_host = gain_host_i
                 best_gain_host_idx = i
@@ -436,6 +446,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             splitinfo = [splitinfo_guest[i]]
             for j in range(len(splitinfo_host)):
                 splitinfo.append(splitinfo_host[j][i])
+                
 
             merge_infos.append(splitinfo)
 
@@ -451,6 +462,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.sync_encrypted_grad_and_hess()
 
         root_sum_grad, root_sum_hess = self.get_grad_hess_sum(self.grad_and_hess)
+        LOGGER.debug('root_sum_grad = {}\nroot_sum_hess = {}'.format(root_sum_grad, root_sum_hess))
         root_node = Node(id=0, sitename=consts.GUEST, sum_grad=root_sum_grad, sum_hess=root_sum_hess,
                          weight=self.splitter.node_weight(root_sum_grad, root_sum_hess))
         self.tree_node_queue = [root_node]
@@ -487,14 +499,17 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
                 self.federated_find_split(dep, batch)
                 final_splitinfo_host = self.sync_final_split_host(dep, batch)
-
+                # os.system("pause")
                 cur_splitinfos = self.merge_splitinfo(self.best_splitinfo_guest, final_splitinfo_host)
+                # os.system("pause")
                 splitinfos.extend(cur_splitinfos)
 
                 batch += 1
 
             max_depth_reach = True if dep + 1 == self.max_depth else False
             self.update_tree_node_queue(splitinfos, max_depth_reach)
+
+            LOGGER.debug('tree_node_queue is ' + str(self.tree_node_queue))
 
             self.redispatch_node(dep)
         

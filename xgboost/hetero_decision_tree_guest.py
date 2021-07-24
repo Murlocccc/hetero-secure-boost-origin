@@ -96,6 +96,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         for i in range(len(self.tree_node_queue)):
             sum_grad = self.tree_node_queue[i].sum_grad
             sum_hess = self.tree_node_queue[i].sum_hess
+            LOGGER.debug('gain is {}'.format(splitinfos[i].gain))
             if max_depth_reach or splitinfos[i].gain <= \
                     self.min_impurity_split + consts.FLOAT_ZERO:
                 self.tree_node_queue[i].is_leaf = True
@@ -144,9 +145,11 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return acc_histograms
 
     def encrypt(self, val):
+        return val
         return self.encrypter.encrypt(val)
 
     def decrypt(self, val):
+        return val
         return self.encrypter.decrypt(val)
 
     def encode(self, etype="feature_idx", val=None, nid=None):
@@ -368,8 +371,9 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
     def encrypt_grad_and_hess(self):
         LOGGER.info("start to encrypt grad and hess")
-        encrypted_grad_and_hess = self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
-        return encrypted_grad_and_hess
+        return self.grad_and_hess
+        return self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
+
 
     def find_best_split_guest_and_host(self, splitinfo_guest_host):
         # TODO
@@ -415,6 +419,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.sync_encrypted_grad_and_hess()
 
         root_sum_grad, root_sum_hess = self.get_grad_hess_sum(self.grad_and_hess)
+        LOGGER.debug('root_sum_grad = {}\nroot_sum_hess = {}'.format(root_sum_grad, root_sum_hess))
         root_node = Node(id=0, sitename=consts.GUEST, sum_grad=root_sum_grad, sum_hess=root_sum_hess,
                          weight=self.splitter.node_weight(root_sum_grad, root_sum_hess))
         self.tree_node_queue = [root_node]
@@ -445,6 +450,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
                     node_map[tree_node.id] = node_num
                     node_num += 1
                 
+                # print('map is {}'.format(node_map))
+
                 acc_histograms = self.get_histograms(node_map=node_map)
 
                 self.best_splitinfo_guest = self.splitter.find_split(acc_histograms, self.valid_features)
@@ -455,10 +462,15 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 cur_splitinfos = self.merge_splitinfo(self.best_splitinfo_guest, final_splitinfo_host)
                 splitinfos.extend(cur_splitinfos)
 
+                # import os
+                # os.system("pause")
+
                 batch += 1
 
             max_depth_reach = True if dep + 1 == self.max_depth else False
             self.update_tree_node_queue(splitinfos, max_depth_reach)
+
+            LOGGER.debug('tree_node_queue is ' + str(self.tree_node_queue))
 
             self.redispatch_node(dep)
         

@@ -5,6 +5,9 @@
 #   - the port of guest
 #   - the run_time_idx, it should be different among hosts
 
+# example
+#   python .\host.py data/breast_hetero/breast_hetero_host.csv 0.8 10086 0
+
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_host import HeteroSecureBoostingTreeHost
 from i_o.utils import read_from_csv_with_no_lable
@@ -28,8 +31,11 @@ def test_hetero_seucre_boost_host():
 
     # host传输实体
     transfer_inst = TransferInstHost(port=port)
+
+    random_seed = transfer_inst.recv_data_from_guest()
     
     hetero_secure_boost_host = HeteroSecureBoostingTreeHost()
+    hetero_secure_boost_host.model_param.subsample_feature_rate = 1
     hetero_secure_boost_host._init_model(hetero_secure_boost_host.model_param)
     hetero_secure_boost_host.set_transfer_inst(transfer_inst)
     hetero_secure_boost_host.set_runtime_idx(run_time_idx)
@@ -37,13 +43,21 @@ def test_hetero_seucre_boost_host():
     # 从文件读取数据，并划分训练集和测试集
     # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
     header, ids, features= read_from_csv_with_no_lable(csv_address)
+
+
     instances = []
     for i, feature in enumerate(features):
         inst = Instance(inst_id=ids[i], features=feature)
         instances.append(inst)
     
     train_instances, test_instances = data_split(instances, divided_proportion, True, 2)
-    
+    # hetero_secure_boost_host.model_param.subsample_feature_rate = 1   
+
+    # ids = [a.inst_id for a in train_instances]
+
+    # print(sorted(ids))
+
+    # return
 
     # 生成DTable
     train_instances = DTable(False, train_instances)

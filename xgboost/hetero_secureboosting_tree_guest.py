@@ -276,6 +276,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             loss = self.compute_loss()
             self.history_loss.append(loss)
             LOGGER.info("round {} loss is {}".format(i, loss))
+            # LOGGER.debug("round {} loss is {}".format(i, loss))
 
             if self.n_iter_no_change is True:
                 if self.check_convergence(loss):
@@ -284,7 +285,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 else:
                     self.sync_stop_flag(False, i)
 
-            LOGGER.debug("history loss is {}".format(min(self.history_loss)))
+            LOGGER.debug("history loss is {}".format(self.history_loss))
 
             LOGGER.info("end to train secureboosting guest model")
 
