@@ -50,7 +50,7 @@ def test_hetero_secure_boost_guest():
     else:
         raise ValueError('the value of param task_type wrong')
 
-    hetero_secure_boost_guest.model_param.subsample_feature_rate = 1
+    # hetero_secure_boost_guest.model_param.subsample_feature_rate = 1
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
     
     hetero_secure_boost_guest.set_transfer_inst(transfer_inst)
@@ -121,6 +121,12 @@ def heteto_sbt_guest():
     # python guest.py data/weather/weather_train_guest.csv data/weather/weather_test_guest.csv 2 CLASSIFICATION 10086
 
     # python guest.py data/lr/lr_train_guest.csv data/lr/lr_test_guest.csv 2 CLASSIFICATION 10086
+
+    # python guest.py data/breast_hetero_mini/breast_hetero_mini_train_guest.csv data/breast_hetero_mini/breast_hetero_mini_test_guest.csv 1 CLASSIFICATION 10086
+
+    # python guest.py data/breast_hetero/breast_hetero_train_guest.csv data/breast_hetero/breast_hetero_test_guest.csv 1 CLASSIFICATION 10086
+
+    # python guest.py data/vehicle_scale_hetero/vehicle_scale_hetero_train_guest.csv data/vehicle_scale_hetero/vehicle_scale_hetero_test_guest.csv 1 CLASSIFICATION 10086
 
     argv = getArgs()
     train_csv_address = argv[0]
@@ -207,6 +213,15 @@ def heteto_sbt_guest():
                 positive_num += 1
         
         return [correct_positive_num / positive_num]
+
+    def cal_statistic_multi(kvs):
+        ret = [[0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]]
+        for _, v in kvs:
+            ret[int(v[0]+0.01)][int(v[1]+0.01)] += 1
+        return [ret]
 
     # print(predict_result)
 

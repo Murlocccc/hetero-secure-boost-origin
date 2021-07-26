@@ -4,6 +4,7 @@ from ml.param.encrypted_mode_calculation_param import EncryptedModeCalculatorPar
 from ml.param.encrypt_param import EncryptParam
 from ml.param.cross_validation_param import CrossValidationParam
 from ml.param.predict_param import PredictParam
+from ml.utils import consts
 import copy
 
 

@@ -99,6 +99,12 @@ def heteto_sbt_host():
     # python host.py data/lr/lr_train_host0.csv data/lr/lr_test_host0.csv 10086 0
     # python host.py data/lr/lr_train_host1.csv data/lr/lr_test_host1.csv 10086 1
 
+    # python host.py data/breast_hetero_mini/breast_hetero_mini_train_host0.csv data/breast_hetero_mini/breast_hetero_mini_test_host0.csv 10086 0
+ 
+    # python host.py data/breast_hetero/breast_hetero_train_host0.csv data/breast_hetero/breast_hetero_test_host0.csv 10086 0
+
+    # python host.py data/vehicle_scale_hetero/vehicle_scale_hetero_train_host0.csv data/vehicle_scale_hetero/vehicle_scale_hetero_test_host0.csv 10086 0
+
     argv = getArgs()
     train_csv_address = argv[0]
     test_csv_address = argv[1]

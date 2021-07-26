@@ -51,4 +51,5 @@ class XgboostCriterion(Criterion):
         return sum_grad * sum_grad / (sum_hess + self.reg_lambda)
 
     def node_weight(self, sum_grad:float, sum_hess:float):
+        # print(self.reg_lambda)
         return -sum_grad / (self.reg_lambda + sum_hess)
