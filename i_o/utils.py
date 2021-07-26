@@ -47,7 +47,11 @@ def read_from_csv_with_lable(csv_address: str):
 
     for i in range(1,len(rows)):
 
+        # print(i)
+
         vals = rows[i].split(',')
+        if '' in vals:
+            vals.remove('')
 
         lables.append(float(vals.pop(lable_pos)))
         ids.append(int(vals.pop(id_pos)))
