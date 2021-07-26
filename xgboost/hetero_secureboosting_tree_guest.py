@@ -233,7 +233,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             self.F = self.F.join(new_f, accumuldate_f)
 
     def fit(self, data_instances:DTable):
-        random.seed(3)
+        # random.seed(3)
         LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
         LOGGER.debug("schema is {}".format(data_instances.schema))

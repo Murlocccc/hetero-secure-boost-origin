@@ -118,9 +118,6 @@ class Binning:
         data_shape = instances.features.get_shape()
         indice = []
         sparse_value = []
-        # print("In _convert_sparse_data, transform_cols_idx: {}, header: {}, split_points_dict: {}".format(
-        #     transform_cols_idx, header, split_points_dict
-        # ))
         for col_idx, col_value in all_data:
             if col_idx in transform_cols_idx:
                 col_name = header[col_idx]

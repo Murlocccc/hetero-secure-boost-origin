@@ -93,27 +93,56 @@ def data_split(full_list, ratio, shuffle=False, random_seed=None):
 
 def heteto_sbt_host():
 
-    transfer_inst = TransferInstHost()
+    # python host.py data/weather/weather_train_host0.csv data/weather/weather_test_host0.csv 10086 0
+    # python host.py data/weather/weather_train_host1.csv data/weather/weather_test_host1.csv 10086 1
 
+    # python host.py data/lr/lr_train_host0.csv data/lr/lr_test_host0.csv 10086 0
+    # python host.py data/lr/lr_train_host1.csv data/lr/lr_test_host1.csv 10086 1
+
+    argv = getArgs()
+    train_csv_address = argv[0]
+    test_csv_address = argv[1]
+    port = int(argv[2])
+    run_time_idx = int(argv[3])
+
+    # host传输实体
+    transfer_inst = TransferInstHost(port=port)
+    
     hetero_secure_boost_host = HeteroSecureBoostingTreeHost()
+    # hetero_secure_boost_host.model_param.subsample_feature_rate = 1
     hetero_secure_boost_host._init_model(hetero_secure_boost_host.model_param)
     hetero_secure_boost_host.set_transfer_inst(transfer_inst)
+    hetero_secure_boost_host.set_runtime_idx(run_time_idx)
 
     # 从文件读取数据
-    # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
-    header, ids, features= read_from_csv_with_no_lable('data/breast_hetero/breast_hetero_guest.csv')
-    instances = []
-    for i, feature in enumerate(features):
-        inst = Instance(inst_id=ids[i], features=feature)
-        instances.append(inst)
+    header1, ids1, features1 = read_from_csv_with_no_lable(train_csv_address)
+    header2, ids2, features2 = read_from_csv_with_no_lable(test_csv_address)
+
+    train_instances = []
+    test_instances = []
+
+    for i, feature in enumerate(features1):
+        inst = Instance(inst_id=ids1[i], features=feature)
+        train_instances.append(inst)
+    
+    for i, feature in enumerate(features2):
+        inst = Instance(inst_id=ids2[i], features=feature)
+        test_instances.append(inst)
 
     # 生成DTable
-    data_instances = DTable(False, instances)
-    data_instances.schema['header'] = header
+    train_instances = DTable(False, train_instances)
+    train_instances.schema['header'] = header1
+    test_instances = DTable(False, test_instances)
+    test_instances.schema['header'] = header2
 
+    LOGGER.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
+    LOGGER.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
 
     # fit
-    hetero_secure_boost_host.fit(data_instances=data_instances)
+    hetero_secure_boost_host.fit(data_instances=train_instances)
+
+    # predict
+    hetero_secure_boost_host.predict(test_instances)
 
 if __name__ == '__main__':
-    test_hetero_seucre_boost_host()
+    heteto_sbt_host()

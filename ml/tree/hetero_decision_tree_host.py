@@ -60,7 +60,7 @@ class HeteroDecisionTreeHost(DecisionTree):
             return val
 
         if etype == "feature_val":
-            return val
+            # return val
             self.split_maskdict[nid] = val
             return None
 
@@ -72,7 +72,7 @@ class HeteroDecisionTreeHost(DecisionTree):
             return val
 
         if dtype == "feature_val":
-            return val
+            # return val
             if nid in split_maskdict:
                 return split_maskdict[nid]
             else:

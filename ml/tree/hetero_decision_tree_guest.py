@@ -1,4 +1,5 @@
 
+from sys import prefix
 from ml.feature.quantile_summaries import SparseQuantileSummaries
 from computing.d_table import DTable
 from numpy import log
@@ -131,6 +132,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 else:
                     self.tree_node_queue[i].fid = splitinfos[i].best_fid
                     self.tree_node_queue[i].bid = splitinfos[i].best_bid
+                
+                # print('node to split is ', str(self.tree_node_queue[i]))
 
                 self.update_feature_importance(splitinfos[i])
             self.tree_.append(self.tree_node_queue[i])
@@ -147,11 +150,11 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return acc_histograms
 
     def encrypt(self, val):
-        # return val
+        return val
         return self.encrypter.encrypt(val)
 
     def decrypt(self, val):
-        # return val
+        return val
         return self.encrypter.decrypt(val)
 
     def encode(self, etype="feature_idx", val=None, nid=None):
@@ -159,6 +162,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             return val
 
         if etype == "feature_val":
+            # return val
             self.split_maskdict[nid] = val
             return None
 
@@ -170,6 +174,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             return val
 
         if dtype == "feature_val":
+            # return val
             if nid in split_maskdict:
                 return split_maskdict[nid]
             else:
@@ -414,7 +419,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
     def encrypt_grad_and_hess(self):
         LOGGER.info("start to encrypt grad and hess")
-        # return self.grad_and_hess
+        return self.grad_and_hess
         return self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
         
 
@@ -424,6 +429,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
         # print('len is ', len(splitinfo_guest_host))
         for i in range(1, len(splitinfo_guest_host)):
             gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
+            # print('the best split gain of this node from {} with fid: {} is {}'.format(
+            #                             splitinfo_guest_host[i].sitename, splitinfo_guest_host[i].best_fid, gain_host_i))
             # print(splitinfo_guest_host[i].gain, 'f_id = {}, b_id = {}'.format(splitinfo_guest_host[i].best_fid, splitinfo_guest_host[i].best_bid))
             if best_gain_host < gain_host_i:
                 best_gain_host = gain_host_i
@@ -453,6 +460,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         splitinfo_guest_host_table = DTable(False, merge_infos)
         best_splitinfo_table = splitinfo_guest_host_table.mapValues(self.find_best_split_guest_and_host)
         best_splitinfos = [best_splitinfo[1] for best_splitinfo in best_splitinfo_table.collect()]
+        # os.system('pause')
 
         return best_splitinfos
 
@@ -484,6 +492,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
             batch = 0
             splitinfos = []
+
+            # print('len of tree_node_queue is {}'.format(len(self.tree_node_queue)))
             for i in range(0, len(self.tree_node_queue), self.max_split_nodes):
                 self.cur_split_nodes = self.tree_node_queue[i: i + self.max_split_nodes]
 
@@ -512,7 +522,11 @@ class HeteroDecisionTreeGuest(DecisionTree):
             LOGGER.debug('tree_node_queue is ' + str(self.tree_node_queue))
 
             self.redispatch_node(dep)
+
+            # os.system('pause')
         
+        # os.system('pause')
+
         self.sync_tree()
         # LOGGER.debug('len of tree_ is {}'.format(len(self.tree_)))
         self.convert_bin_to_real()

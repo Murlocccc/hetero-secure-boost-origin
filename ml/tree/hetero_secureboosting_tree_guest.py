@@ -240,7 +240,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             self.F = self.F.join(new_f, accumuldate_f)
 
     def fit(self, data_instances:DTable):
-        random.seed(3)
+        # random.seed(3)
         LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
         # LOGGER.debug("schema is {}".format(data_instances.schema))
@@ -257,6 +257,8 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             # n_tree = []
             self.compute_grad_and_hess()
             for tidx in range(self.tree_dim):
+                print('============TREE_{} START=============='.format(i))
+                print('============TREE_{} START=============='.format(i))
                 tree_inst = HeteroDecisionTreeGuest(self.tree_param)
 
                 tree_inst.set_inputinfo(self.data_bin, self.get_grad_and_hess(tidx), self.bin_split_points,
@@ -303,6 +305,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         rounds = len(self.trees_) // self.tree_dim
         for i in range(rounds):
             for tidx in range(self.tree_dim):
+                
                 tree_inst = HeteroDecisionTreeGuest(self.tree_param)
                 tree_inst.load_model(self.tree_meta, self.trees_[i * self.tree_dim + tidx])
                 # tree_inst.set_tree_model(self.trees_[i * self.tree_dim + tidx])
@@ -310,6 +313,8 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 tree_inst.set_transfer_inst(self.transfer_inst)
 
                 predict_data = tree_inst.predict(data_instances)
+                print('the predict_value of data_{} from tree_{} is {}'.format(24, i, dict(predict_data.collect())[24]))
+                print('the predict_value of data_{} from tree_{} is {}'.format(43, i, dict(predict_data.collect())[43]))
                 self.update_f_value(new_f=predict_data, tidx=tidx)
 
     def predict(self, data_instances:DTable):
