@@ -3,7 +3,6 @@ import numpy as np
 def read_from_csv_with_lable(csv_address: str):
     """
     read data from the csv file with lable
-
     Parameters
     ----------
     csv_address: str
@@ -19,7 +18,6 @@ def read_from_csv_with_lable(csv_address: str):
         list of features
     lables:
         list of lable
-
     Notes
     -----
     the first column of the csv file will be recognized as the id_col
@@ -47,10 +45,14 @@ def read_from_csv_with_lable(csv_address: str):
 
     for i in range(1,len(rows)):
 
-        vals = rows[i].split(',')
+        # print(i)
 
-        lables.append(vals.pop(lable_pos))
-        ids.append(vals.pop(id_pos))
+        vals = rows[i].split(',')
+        if '' in vals:
+            vals.remove('')
+
+        lables.append(float(vals.pop(lable_pos)))
+        ids.append(int(vals.pop(id_pos)))
         vals = [float(val) for val in vals]
         features.append(np.array(vals))
 
@@ -59,7 +61,6 @@ def read_from_csv_with_lable(csv_address: str):
 def read_from_csv_with_no_lable(csv_address: str):
     """
     read data from the csv file with no lable
-
     Parameters
     ----------
     csv_address: str
@@ -73,7 +74,6 @@ def read_from_csv_with_no_lable(csv_address: str):
         list of id
     features:
         list of features
-
     Notes
     -----
     the first column of the csv file will be recognized as the id_col
@@ -98,7 +98,7 @@ def read_from_csv_with_no_lable(csv_address: str):
 
         vals = rows[i].split(',')
 
-        ids.append(vals.pop(id_pos))
+        ids.append(int(vals.pop(id_pos)))
         vals = [float(val) for val in vals]
         features.append(np.array(vals))
 
