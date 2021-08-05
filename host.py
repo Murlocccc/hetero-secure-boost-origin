@@ -13,6 +13,9 @@ from ml.utils.logger import MyLoggerFactory
 from federation.transfer_inst import TransferInstHost
 import random
 import sys
+import logging
+from ml.utils.logger import LOGGER
+import time
 
 
 my_logger = MyLoggerFactory.build("host")
@@ -23,36 +26,59 @@ def getArgs():
 
 def test_hetero_seucre_boost_host():
 
+    # 获取命令行参数
     argv = getArgs()
-    csv_address = argv[0]
-    divided_proportion = float(argv[1])
+    train_csv_address = argv[0]
+    test_csv_address = argv[1]
     port = int(argv[2])
     run_time_idx = int(argv[3])
 
-    # host传输实体
+    # 初始化 log 模块
+    LOGGER.basic_config(filename=time.strftime("log/host{}_%Y-%m-%d-%H_%M_%S".format(run_time_idx))+'.log', level=logging.DEBUG)
+
+    # 记录一些参数设置到日志
+    LOGGER.info('here is the host_{}'.format(run_time_idx))
+    LOGGER.info('train_file is {}'.format(train_csv_address))
+    LOGGER.info('test_file is {}'.format(test_csv_address))
+
+    # 实例化 hetero secure boost tree host 实体
     transfer_inst = TransferInstHost(port=port)
     
+    # 设置 hetero secure boost tree host 的参数
     hetero_secure_boost_host = HeteroSecureBoostingTreeHost()
+
+    # 使用默认参数，对 hetero secure boost tree host 进行初始化
     hetero_secure_boost_host._init_model(hetero_secure_boost_host.model_param)
-    hetero_secure_boost_host.set_transfer_inst(transfer_inst)
+
+    # 设置 hetero secure boost tree host 的运行时标记，用以区分各个 host
     hetero_secure_boost_host.set_runtime_idx(run_time_idx)
 
-    # 从文件读取数据，并划分训练集和测试集
-    # header, ids, features, lables = read_from_csv('data/breast_hetero_mini/breast_hetero_mini_guest.csv')
-    header, ids, features= read_from_csv_with_no_lable(csv_address)
-    instances = []
-    for i, feature in enumerate(features):
-        inst = Instance(inst_id=ids[i], features=feature)
-        instances.append(inst)
-    
-    train_instances, test_instances = data_split(instances, divided_proportion, True, 2)
-    
+    # 给 hetero secure boost tree host 分配一个传输实体
+    hetero_secure_boost_host.set_transfer_inst(transfer_inst)
 
-    # 生成DTable
+    # 从训练集文件和测试集文件读取数据
+    header1, ids1, features1 = read_from_csv_with_no_lable(train_csv_address)
+    header2, ids2, features2 = read_from_csv_with_no_lable(test_csv_address)
+
+    # 将读取的数据转化为 Instance 对象
+    train_instances = []
+    test_instances = []
+    for i, feature in enumerate(features1):
+        inst = Instance(inst_id=ids1[i], features=feature)
+        train_instances.append(inst)
+    for i, feature in enumerate(features2):
+        inst = Instance(inst_id=ids2[i], features=feature)
+        test_instances.append(inst)
+    
+    # 使用上面得到的 Instance 的列表转化为 DTable 对象
     train_instances = DTable(False, train_instances)
-    train_instances.schema['header'] = header
+    train_instances.schema['header'] = header1
     test_instances = DTable(False, test_instances)
-    test_instances.schema['header'] = header
+    test_instances.schema['header'] = header2
+
+    # 记录数据集相关信息到日志
+    LOGGER.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
+    LOGGER.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
 
     # fit
     hetero_secure_boost_host.fit(data_instances=train_instances)
