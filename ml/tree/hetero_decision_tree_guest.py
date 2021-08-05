@@ -145,9 +145,11 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return acc_histograms
 
     def encrypt(self, val):
+        return val
         return self.encrypter.encrypt(val)
 
     def decrypt(self, val):
+        return val 
         return self.encrypter.decrypt(val)
 
     def encode(self, etype="feature_idx", val=None, nid=None):
@@ -407,6 +409,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
     def encrypt_grad_and_hess(self):
         LOGGER.info("start to encrypt grad and hess")
+        return self.grad_and_hess
         encrypted_grad_and_hess = self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
         return encrypted_grad_and_hess
 
