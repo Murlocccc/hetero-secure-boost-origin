@@ -114,7 +114,7 @@ def test_hetero_secure_boost_guest():
 
     # 计算并输出混淆矩阵
     statistic = predict_result.mapPartitions(cal_statistic).reduce(lambda a, b: a + b)
-    print('(TP, TN, FP, FN) is {}'.format(statistic))
+    LOGGER.info('(TP, TN, FP, FN) is {}'.format(statistic))
 
 def data_split(full_list, ratio, shuffle=False, random_seed=None):
     """
