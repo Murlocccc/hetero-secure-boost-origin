@@ -10,11 +10,6 @@ class TransferInst:
     def send_data(cs, data):
         byteStream = pickle.dumps(data)
         length = len(byteStream)
-        # LOGGER.debug('len of send_msg is {}'.format(length))
-
-        # byteStream = bytes(f"{length:<16}", 'utf-8')+byteStream
-
-        # cs.sendall(byteStream)
 
         cs.sendall(bytes(f"{length:<16}", 'utf-8'))
 
@@ -22,20 +17,9 @@ class TransferInst:
     
     @staticmethod
     def recv_data(cs):
-        # msg = cs.recv(1024)
-        # length = int(msg[:16])
-        # # LOGGER.debug('len of recv_msg is {}'.format(length))
-        # full_msg = b''
-        # full_msg += msg[16:]
-        # nowsize = len(full_msg)
-        # while nowsize < length:
-        #     more = cs.recv(length - nowsize)
-        #     full_msg = full_msg + more
-        #     nowsize += len(more)
 
         msg = cs.recv(16)
         length = int(msg[:16])
-        # LOGGER.debug('len of recv_msg is {}'.format(length))
         full_msg = b''
         nowsize = len(full_msg)
         while nowsize < length:
@@ -43,7 +27,6 @@ class TransferInst:
             full_msg = full_msg + more
             nowsize += len(more)
 
-        # LOGGER.debug('true len of recv_msg is {}'.format(length))
         return pickle.loads(full_msg)
 
 
