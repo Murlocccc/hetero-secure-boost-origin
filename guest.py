@@ -15,12 +15,18 @@ from federation.transfer_inst import TransferInstGuest
 from ml.utils import consts
 import random
 import sys
+import logging
+from ml.utils.logger import LOGGER
+import time
 
 my_logger = MyLoggerFactory.build("guest")
 
 def getArgs():
     argv = sys.argv[1:]
     return argv
+
+def init_log():
+    LOGGER.basic_config(filename=time.strftime("log/guest_%Y-%m-%d-%H_%M_%S")+'.log', level=logging.DEBUG)
 
 def test_hetero_secure_boost_guest():
 
@@ -30,6 +36,8 @@ def test_hetero_secure_boost_guest():
     divided_proportion = float(argv[2])
     task_type = argv[3]
     port = int(argv[4])
+
+    init_log()
 
     # guest传输实体
     transfer_inst = TransferInstGuest(port, num_hosts)
