@@ -26,6 +26,9 @@ def getArgs():
 
 def test_hetero_seucre_boost_host():
 
+    # python host.py data/weather/weather_train_host0.csv data/weather/weather_test_host0.csv 10086 0
+    # python host.py data/weather/weather_train_host1.csv data/weather/weather_test_host1.csv 10086 1
+
     # 获取命令行参数
     argv = getArgs()
     train_csv_address = argv[0]

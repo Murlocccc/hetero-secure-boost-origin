@@ -27,6 +27,8 @@ def getArgs():
 
 def test_hetero_secure_boost_guest():
 
+    # python guest.py data/weather/weather_train_guest.csv data/weather/weather_test_guest.csv 2 CLASSIFICATION 10086
+
     # 获取命令行参数
     argv = getArgs()
     train_csv_address = argv[0]

@@ -87,6 +87,7 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         for i in range(self.num_trees):
             # n_tree = []
             for tidx in range(self.tree_dim):
+                LOGGER.info('============TREE_{}.{} START=============='.format(i, tidx))
                 tree_inst = HeteroDecisionTreeHost(self.tree_param)
 
                 tree_inst.set_inputinfo(data_bin=self.data_bin, bin_split_points=self.bin_split_points,
