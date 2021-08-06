@@ -4,6 +4,8 @@ import logging
 
 class LOGGER:
 
+    
+
     @classmethod
     def basic_config(cls, **kwargs):
         logging.basicConfig(**kwargs)
