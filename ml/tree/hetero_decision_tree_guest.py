@@ -1,6 +1,5 @@
 
 from computing.d_table import DTable
-from numpy import log
 from ml.tree.decision_tree import DecisionTree
 from ml.param.boosting_tree_param import BoostingTreeParam
 from ml.utils.logger import LOGGER, MyLoggerFactory
@@ -41,6 +40,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.predict_weights = None
         self.runtime_idx = 0
         self.feature_importances_ = {}
+        self.y = None
         
     def set_inputinfo(self, data_bin=None, grad_and_hess=None, bin_split_points=None, bin_sparse_points=None):
         self.logger.info("set input info")
@@ -91,6 +91,9 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
         self.feature_importances_[(sitename, fid)] += inc
 
+    def cal_purity_for_leaf():
+        pass
+
     def update_tree_node_queue(self, splitinfos, max_depth_reach):
         self.logger.info("update tree node, splitlist length is {}, tree node queue size is {}".format(
             len(splitinfos), len(self.tree_node_queue)))
@@ -101,6 +104,12 @@ class HeteroDecisionTreeGuest(DecisionTree):
             if max_depth_reach or splitinfos[i].gain <= \
                     self.min_impurity_split + consts.FLOAT_ZERO:
                 self.tree_node_queue[i].is_leaf = True
+                inst_belong_to_the_leaf = self.node_dispatch.filter(lambda k, value: value[1] == self.tree_node_queue[i].id)
+                p_n_in_the_leaf = self.y.join(inst_belong_to_the_leaf)
+                num_positive = p_n_in_the_leaf.reduce(lambda a, b: a + b)
+                num_totle = p_n_in_the_leaf.count()
+                purity = 0 if num_totle == 0 else max(num_totle - num_positive) / num_positive
+                LOGGER.debug('node with id = {} is a leaf, its purity = {}'.format(self.tree_node_queue[i].id, purity))
             else:
                 self.tree_node_queue[i].left_nodeid = self.tree_node_num + 1
                 self.tree_node_queue[i].right_nodeid = self.tree_node_num + 2
@@ -645,3 +654,6 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
         self.logger.info("predict finish!")
         return predict_result
+
+    def set_y(self, y: DTable):
+        self.y = y
