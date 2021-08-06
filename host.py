@@ -29,6 +29,19 @@ def test_hetero_seucre_boost_host():
     # python host.py data/weather/weather_train_host0.csv data/weather/weather_test_host0.csv 10086 0
     # python host.py data/weather/weather_train_host1.csv data/weather/weather_test_host1.csv 10086 1
 
+    # python host.py data/lr/lr_train_host0.csv data/lr/lr_test_host0.csv 10086 0
+    # python host.py data/lr/lr_train_host1.csv data/lr/lr_test_host1.csv 10086 1
+
+    # python host.py data/asd/train_host.csv data/asd/test_host.csv 10086 0
+
+    # python host.py data/credit2/credit2_train_host0.csv data/credit2/credit2_test_host0.csv 10086 0
+
+    # python host.py data/breast_hetero_mini/breast_hetero_mini_train_host0.csv data/breast_hetero_mini/breast_hetero_mini_test_host0.csv 10086 0
+ 
+    # python host.py data/breast_hetero/breast_hetero_train_host0.csv data/breast_hetero/breast_hetero_test_host0.csv 10086 0
+
+    # python host.py data/vehicle_scale_hetero/vehicle_scale_hetero_train_host0.csv data/vehicle_scale_hetero/vehicle_scale_hetero_test_host0.csv 10086 0
+
     # 获取命令行参数
     argv = getArgs()
     train_csv_address = argv[0]
@@ -44,13 +57,16 @@ def test_hetero_seucre_boost_host():
     LOGGER.info('train_file is {}'.format(train_csv_address))
     LOGGER.info('test_file is {}'.format(test_csv_address))
 
-    # 实例化 hetero secure boost tree host 实体
+    # 实例化 host 传输实体
     transfer_inst = TransferInstHost(port=port)
     
-    # 设置 hetero secure boost tree host 的参数
+    # 实例化 hetero secure boost tree host 实体
     hetero_secure_boost_host = HeteroSecureBoostingTreeHost()
 
-    # 使用默认参数，对 hetero secure boost tree host 进行初始化
+    # 设置 hetero secure boost tree host 的参数
+    hetero_secure_boost_host.model_param.tree_param.max_depth=5
+
+    # 使用设置的参数以及默认参数，对 hetero secure boost tree host 进行初始化
     hetero_secure_boost_host._init_model(hetero_secure_boost_host.model_param)
 
     # 设置 hetero secure boost tree host 的运行时标记，用以区分各个 host

@@ -29,6 +29,18 @@ def test_hetero_secure_boost_guest():
 
     # python guest.py data/weather/weather_train_guest.csv data/weather/weather_test_guest.csv 2 CLASSIFICATION 10086
 
+    # python guest.py data/lr/lr_train_guest.csv data/lr/lr_test_guest.csv 2 CLASSIFICATION 10086
+
+    # python guest.py data/asd/train_guest.csv data/asd/test_guest.csv 1 CLASSIFICATION 10086
+
+    # python guest.py data/breast_hetero_mini/breast_hetero_mini_train_guest.csv data/breast_hetero_mini/breast_hetero_mini_test_guest.csv 1 CLASSIFICATION 10086
+
+    # python guest.py data/credit2/credit2_train_guest.csv data/credit2/credit2_test_guest.csv 1 CLASSIFICATION 10086
+
+    # python guest.py data/breast_hetero/breast_hetero_train_guest.csv data/breast_hetero/breast_hetero_test_guest.csv 1 CLASSIFICATION 10086
+
+    # python guest.py data/vehicle_scale_hetero/vehicle_scale_hetero_train_guest.csv data/vehicle_scale_hetero/vehicle_scale_hetero_test_guest.csv 1 CLASSIFICATION 10086
+
     # 获取命令行参数
     argv = getArgs()
     train_csv_address = argv[0]
@@ -53,6 +65,7 @@ def test_hetero_secure_boost_guest():
     hetero_secure_boost_guest = HeteroSecureBoostingTreeGuest()
 
     # 设置 hetero secure boost tree guest 的参数
+    hetero_secure_boost_guest.model_param.tree_param.max_depth=5
     if task_type == 'CLASSIFICATION':
         hetero_secure_boost_guest.model_param.task_type = consts.CLASSIFICATION
     # elif task_type == 'REGRESSION':
