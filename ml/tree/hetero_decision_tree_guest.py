@@ -11,6 +11,7 @@ from arch.api.boosting_tree_model_meta_pb2 import DecisionTreeModelMeta, Criteri
 from arch.api.boosting_tree_model_param_pb2 import DecisionTreeModelParam
 import copy
 import functools
+import numpy as np
 
 
 class HeteroDecisionTreeGuest(DecisionTree):
@@ -33,6 +34,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.tree_node_queue = None
         self.cur_split_nodes = None
         self.tree_ = []
+        self._nodeid_purity_list = []
         self.tree_node_num = 0
         self.split_maskdict = {}
         # self.transfer_inst = HeteroDecisionTreeTransferVariable()
@@ -90,9 +92,6 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
         self.feature_importances_[(sitename, fid)] += inc
 
-    def cal_purity_for_leaf():
-        pass
-
     def update_tree_node_queue(self, splitinfos, max_depth_reach):
         LOGGER.info("update tree node, splitlist length is {}, tree node queue size is {}".format(
             len(splitinfos), len(self.tree_node_queue)))
@@ -103,12 +102,19 @@ class HeteroDecisionTreeGuest(DecisionTree):
             if max_depth_reach or splitinfos[i].gain <= \
                     self.min_impurity_split + consts.FLOAT_ZERO:
                 self.tree_node_queue[i].is_leaf = True
+                # 从当前剩余的实例里筛除和这个结点关联的实例
                 inst_belong_to_the_leaf = self.node_dispatch.filter(lambda k, value: value[1] == self.tree_node_queue[i].id)
+                # 找到实例的标签值（join 的默认回调函数为lambda a, b: a）
                 p_n_in_the_leaf = self.y.join(inst_belong_to_the_leaf)
+                # 累加标签值，得到该节点正样本数量（这个只在0-1二分类有意义）
                 num_positive = p_n_in_the_leaf.reduce(lambda a, b: a + b)
+                # 该节点样本总量
                 num_totle = p_n_in_the_leaf.count()
-                purity = 0 if num_totle == 0 else max(num_totle - num_positive) / num_positive
-                LOGGER.debug('node with id = {} is a leaf, its purity = {}'.format(self.tree_node_queue[i].id, purity))
+                # 计算纯净度（考虑 除以0 的异常）
+                purity = 0 if num_totle == 0 else max(num_totle - num_positive, num_positive) / num_totle
+                # 暂存起来，用以计算相关的统计量
+                self._nodeid_purity_list.append((self.tree_node_queue[i].id, purity, num_totle))
+                # LOGGER.debug('node with id = {} is a leaf, its purity = {}'.format(self.tree_node_queue[i].id, purity))
             else:
                 self.tree_node_queue[i].left_nodeid = self.tree_node_num + 1
                 self.tree_node_queue[i].right_nodeid = self.tree_node_num + 2
@@ -515,8 +521,20 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.convert_bin_to_real()
         tree_ = self.tree_
         LOGGER.info("tree node num is %d" % len(tree_))
-        LOGGER.info("end to fit guest decision tree")
+        purity_list = []
+        count_list = []
+        for nodeid_purity_count in self._nodeid_purity_list:
+            nodeid, purity, count = nodeid_purity_count
+            purity_list.append(purity)
+            count_list.append(count)
+            LOGGER.debug('node with id = {} is a leaf, its purity = {}, count is {}'.format(nodeid, purity, count))
+        LOGGER.debug('the average of the purity is {}'.format(np.average(purity_list)))
+        LOGGER.debug('the maximum of the purity is {}'.format(np.max(purity_list)))
+        LOGGER.debug('the minimun of the purity is {}'.format(np.min(purity_list)))
+        LOGGER.debug('the weighted average of the purity is {}'.format(np.average(purity_list, weights=count_list)))
 
+        LOGGER.info("end to fit guest decision tree")
+        
     def get_model(self):
         model_meta = self.get_model_meta()
         model_param = self.get_model_param()
