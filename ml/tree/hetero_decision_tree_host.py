@@ -8,6 +8,10 @@ from arch.api.boosting_tree_model_meta_pb2 import DecisionTreeModelMeta
 from arch.api.boosting_tree_model_param_pb2 import DecisionTreeModelParam
 from ml.tree.feateur_histogram import FeatureHistogram
 import functools
+import time
+import csv
+import copy
+
 
 class HeteroDecisionTreeHost(DecisionTree):
     def __init__(self, tree_param):
@@ -18,6 +22,8 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.splitter = Splitter(self.criterion_method, self.criterion_params, self.min_impurity_split,
                                  self.min_sample_split, self.min_leaf_node)
 
+        self.node_dispatch_log_path = 'node_dispatch_log/'
+
         self.data_bin = None
         self.data_bin_with_position = None
         self.grad_and_hess = None
@@ -26,6 +32,7 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.infos = None
         self.valid_features = None
         self.pubkey = None
+        self.flow_id = None
         self.privakey = None
         self.tree_id = None
         self.encrypted_grad_and_hess = None
@@ -37,7 +44,12 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.sitename = consts.HOST
 
     def set_flowid(self, flowid=0):
+<<<<<<< HEAD
         self.logger.info("set flowid, flowid is {}".format(flowid))
+=======
+        LOGGER.info("set flowid, flowid is {}".format(flowid))
+        self.flow_id = flowid
+>>>>>>> e40d263 (增加了host“叶子节点与样本空间关联情况”的输出，以及分裂信息的输出)
         # self.transfer_inst.set_flowid(flowid)
 
     def set_runtime_idx(self, runtime_idx):
@@ -240,6 +252,11 @@ class HeteroDecisionTreeHost(DecisionTree):
             if self.tree_[i].sitename == self.sitename:
                 fid = self.decode("feature_idx", self.tree_[i].fid, split_maskdict=self.split_maskdict)
                 bid = self.decode("feature_val", self.tree_[i].bid, self.tree_[i].id, self.split_maskdict)
+
+                # 输出host本地节点的相关信息，包括结点id，分裂使用的特征，以及对应的特征值
+                LOGGER.debug('ATTACK: the feature [{}](fid = {}) is used to split the node_{} with val [{}]'.format(
+                    self.data_bin.schema['header'][fid],self.tree_[i].fid, self.tree_[i].id, self.bin_split_points[fid][bid]))
+
                 real_splitval = self.encode("feature_val", self.bin_split_points[fid][bid], self.tree_[i].id)
                 self.tree_[i].bid = real_splitval
 
@@ -305,6 +322,8 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.logger.info("begin to fit host decision tree")
         self.sync_encrypted_grad_and_hess()
 
+        final_dispatch = None
+
         for dep in range(self.max_depth):
             self.sync_tree_node_queue(dep)
             if len(self.tree_node_queue) == 0:
@@ -312,6 +331,12 @@ class HeteroDecisionTreeHost(DecisionTree):
 
             node_positions = self.sync_node_positions(dep)
             self.data_bin_with_position = self.data_bin.join(node_positions, lambda v1, v2: (v1, v2))
+
+            # 更新实例空间和节点的关联情况
+            if final_dispatch is None:
+                final_dispatch = copy.deepcopy(node_positions)
+            else:
+                final_dispatch = final_dispatch.union(node_positions, lambda v1, v2: v2)
 
             batch = 0
             for i in range(0, len(self.tree_node_queue), self.max_split_nodes):
@@ -340,6 +365,15 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.sync_tree()
         # self.logger.debug('len of tree_ is {}'.format(len(self.tree_)))
         self.convert_bin_to_real()
+
+        # 把实例空间和叶子节点的关联情况输出到文件
+        file_name = self.node_dispatch_log_path + time.strftime("host{}_%Y-%m-%d-%H_%M_%S".format(self.runtime_idx)) + self.flow_id + '.csv'
+        f = open(file_name, 'w', newline='', encoding='utf-8')
+        writer = csv.writer(f)
+        writer.writerow(['inst_id', 'node_id'])
+        func = functools.partial(self.save_final_dispatch, writer=writer)
+        final_dispatch.map(func)
+        f.close()
 
         self.logger.info("end to fit guest decision tree")
 
@@ -424,3 +458,6 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.min_sample_split = model_meta.min_sample_split
         self.min_impurity_split = model_meta.min_impurity_split
         self.min_leaf_node = model_meta.min_leaf_node
+
+    def save_final_dispatch(self, k, v, writer: csv.writer):
+        writer.writerow([str(k), str(v[1])])
