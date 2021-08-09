@@ -139,3 +139,6 @@ protobuf-3.17.3/
 data/weather
 data/lr
 data/asd
+
+# log
+node_dispatch_log/*.csv
