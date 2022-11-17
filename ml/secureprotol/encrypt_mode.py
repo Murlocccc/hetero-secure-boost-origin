@@ -14,7 +14,7 @@
 #  limitations under the License.
 #
 
-from collections import Iterable
+from collections.abc import Iterable
 from ml.statistic.data_overview import rubbish_clear 
 from ml.utils import consts
 import numpy as np
