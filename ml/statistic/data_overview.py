@@ -1,8 +1,8 @@
 import types
 from computing.d_table import DTable
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 
-
+LOGGER = MyLoggerFactory().get_logger()
 def get_features_shape(data_instances: DTable):
     return len(data_instances.schema)
 

@@ -1,7 +1,6 @@
 import functools
 import math
 
-from ml.utils.logger import LOGGER
 from ml.feature.sparse_vector import SparseVector
 from ml.statistic import data_overview
 import numpy as np

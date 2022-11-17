@@ -1,16 +1,17 @@
 
 import warnings
-from ml.utils.logger import LOGGER, MyLoggerFactory
+from ml.utils.logger import MyLoggerFactory
 from ml.tree.creterion import XgboostCriterion
 from computing.d_table import DTable
 from ml.utils import consts
 from ml.tree.node import SplitInfo
 
+LOGGER = MyLoggerFactory().get_logger()
 class Splitter():
     def __init__(self, criterion_method, criterion_params=[0, 1], min_impurity_split=1e-2, min_sample_split=2,
                  min_leaf_node=1) -> None:
-        self.logger = MyLoggerFactory().get_logger()
-        self.logger.info("splitter init!")
+        LOGGER = MyLoggerFactory().get_logger()
+        LOGGER.info("splitter init!")
         if not isinstance(criterion_method, str):
             raise TypeError("criterion_method type should be str, but %s find" % (type(criterion_method).__name__))
 
@@ -74,7 +75,7 @@ class Splitter():
         return splitinfo
 
     def find_split(self, histograms, valid_features):
-        self.logger.info("splitter find split of raw data")
+        LOGGER.info("splitter find split of raw data")
         histogram_table = DTable(False, histograms)
         splitinfo_table = histogram_table.mapValues(lambda sub_hist:
                                                     self.find_split_single_histogram_guest(sub_hist, valid_features))
@@ -113,7 +114,7 @@ class Splitter():
         return node_splitinfo, node_grad_hess
 
     def find_split_host(self, histograms, valid_features, sitename=consts.HOST):
-        self.logger.info("splitter find split of host")
+        LOGGER.info("splitter find split of host")
         histogram_table = DTable(False, histograms)
         host_splitinfo_table = histogram_table.mapValues(lambda hist:
                                                          self.find_split_single_histogram_host(hist, valid_features, sitename))

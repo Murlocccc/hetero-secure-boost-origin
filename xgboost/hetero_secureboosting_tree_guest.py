@@ -2,7 +2,7 @@ from numpy.random.mtrand import rand
 from computing.d_table import DTable
 from ml.tree.boosting_tree import BoostingTree
 from ml.utils import consts
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 from ml.loss.cross_entropy import SigmoidBinaryCrossEntropyLoss, SoftmaxCrossEntropyLoss
 from ml.feature.instance import Instance
 from ml.param.feature_binning_param import FeatureBinningParam
@@ -18,6 +18,7 @@ import functools
 import copy
 from numpy import random
 
+LOGGER = MyLoggerFactory.build('guest')
 class HeteroSecureBoostingTreeGuest(BoostingTree):
     def __init__(self):
         super().__init__()

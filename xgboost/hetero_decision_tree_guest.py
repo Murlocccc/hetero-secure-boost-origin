@@ -2,7 +2,7 @@ from computing.d_table import DTable
 from numpy import log
 from ml.tree.decision_tree import DecisionTree
 from ml.param.boosting_tree_param import BoostingTreeParam
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 from ml.tree.splitter import Splitter
 from ml.utils import consts
 from ml.tree.node import Node
@@ -13,6 +13,7 @@ import copy
 import functools
 
 
+LOGGER = MyLoggerFactory.build('guest')
 class HeteroDecisionTreeGuest(DecisionTree):
     def __init__(self, tree_param: BoostingTreeParam):
         LOGGER.info('hetero decision tree guest init!')

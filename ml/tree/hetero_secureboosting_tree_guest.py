@@ -1,7 +1,7 @@
 from computing.d_table import DTable
 from ml.tree.boosting_tree import BoostingTree
 from ml.utils import consts
-from ml.utils.logger import LOGGER, MyLoggerFactory
+from ml.utils.logger import MyLoggerFactory
 from ml.loss.cross_entropy import SigmoidBinaryCrossEntropyLoss, SoftmaxCrossEntropyLoss
 from ml.feature.instance import Instance
 from ml.param.feature_binning_param import FeatureBinningParam
@@ -16,6 +16,8 @@ import numpy as np
 import functools
 import copy
 from numpy import random
+
+LOGGER = MyLoggerFactory().get_logger()
 
 class HeteroSecureBoostingTreeGuest(BoostingTree):
     def __init__(self):
@@ -45,12 +47,11 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         self.runtime_idx = 0
         self.feature_importances_ = {}
         self.role = consts.GUEST
-        self.logger = MyLoggerFactory().get_logger()
 
     def set_loss(self, objective_param):
         loss_type = objective_param.objective
         params = objective_param.params
-        self.logger.info("set objective, objective is {}".format(loss_type))
+        LOGGER.info("set objective, objective is {}".format(loss_type))
         if self.task_type == consts.CLASSIFICATION:
             if loss_type == "cross_entropy":
                 if self.num_classes == 2:
@@ -78,12 +79,12 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             raise NotImplementedError("objective %s not supported yet" % (loss_type))
 
     def convert_feature_to_bin(self, data_instances:DTable):
-        self.logger.info("convert feature to bins")
+        LOGGER.info("convert feature to bins")
         param_obj = FeatureBinningParam(bin_num=self.bin_num)
         binning_obj = QuantileBinning(param_obj)
         binning_obj.fit_split_points(data_instances)
         self.data_bin, self.bin_split_points, self.bin_sparse_points = binning_obj.convert_feature_to_bin(data_instances)  # 分别是DTable，ndarray，dict
-        self.logger.info("convert feature to bins over")
+        LOGGER.info("convert feature to bins over")
         # print('data_bin(type: {}) is \n'.format(type(self.data_bin)), self.data_bin)
         # print('data_bin count is {}'.format(self.data_bin.count()))
         # print('data_bin header is {}'.format(self.data_bin.schema.get('header')))
@@ -91,12 +92,12 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         # print('bin_sparse_points(type: {}) is \n'.format(type(self.bin_sparse_points)), self.bin_sparse_points)
 
     def set_y(self):
-        self.logger.info("set label from data and check label")
+        LOGGER.info("set label from data and check label")
         self.y = self.data_bin.mapValues(lambda instance: instance.label)
         self.check_label()
     
     def generate_encrypter(self):
-        self.logger.info("generate encrypter")
+        LOGGER.info("generate encrypter")
         if self.encrypt_param.method == consts.PAILLIER:
             self.encrypter = PaillierEncrypt()
             self.encrypter.generate_key(self.encrypt_param.key_length)
@@ -106,14 +107,14 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         self.encrypted_calculator = EncryptModeCalculator(self.encrypter, self.calculated_mode, self.re_encrypted_rate)
 
     def check_convergence(self, loss):
-        self.logger.info("check convergence")
+        LOGGER.info("check convergence")
         if self.convegence is None:
             self.convegence = DiffConverge(eps=self.tol)
 
         return self.convegence.is_converge(loss)
 
     def sample_valid_features(self):
-        self.logger.info("sample valid features")
+        LOGGER.info("sample valid features")
         if self.feature_num is None:
             self.feature_num = self.bin_split_points.shape[0]
 
@@ -126,7 +127,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         return valid_features
 
     def check_label(self):
-        self.logger.info("check label")
+        LOGGER.info("check label")
         if self.task_type == consts.CLASSIFICATION:
             self.num_classes, self.classes_ = ClassifyLabelChecker.validate_y(self.y)
             if self.num_classes > 2:
@@ -155,7 +156,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         self.set_loss(self.objective_param)
 
     def compute_loss(self):
-        self.logger.info("compute loss")
+        LOGGER.info("compute loss")
         if self.task_type == consts.CLASSIFICATION:
             loss_method = self.loss
             y_predict = self.F.mapValues(lambda val: loss_method.predict(val))
@@ -172,7 +173,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         return float(loss)
 
     def compute_grad_and_hess(self):
-        self.logger.info('compute grad and hess')
+        LOGGER.info('compute grad and hess')
         loss_method = self.loss
         if self.task_type == consts.CLASSIFICATION:
             self.grad_and_hess = self.y.join(self.F, lambda y, f_val: \
@@ -184,7 +185,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
              loss_method.compute_hess(y, f_val)))
 
     def sync_tree_dim(self):
-        self.logger.info("sync tree dim to host")
+        LOGGER.info("sync tree dim to host")
 
         self.transfer_inst.send_data_to_hosts(self.tree_dim, -1)
 
@@ -195,7 +196,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         #                   idx=-1)
 
     def sync_stop_flag(self, stop_flag, num_round):
-        self.logger.info("sync stop flag to host, boosting round is {}".format(num_round))
+        LOGGER.info("sync stop flag to host, boosting round is {}".format(num_round))
         self.transfer_inst.send_data_to_hosts(stop_flag, -1)
         
         # federation.remote(obj=stop_flag,
@@ -205,11 +206,11 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         #                   idx=-1)
 
     def generate_flowid(self, round_num, tree_num):
-        self.logger.info("generate flowid, flowid {}".format(self.flowid))
+        LOGGER.info("generate flowid, flowid {}".format(self.flowid))
         return ".".join(map(str, [self.flowid, round_num, tree_num]))
 
     def get_grad_and_hess(self, tree_idx):
-        self.logger.info("get grad and hess of tree {}".format(tree_idx))
+        LOGGER.info("get grad and hess of tree {}".format(tree_idx))
         grad_and_hess_subtree = self.grad_and_hess.mapValues(
             lambda grad_and_hess: (grad_and_hess[0][tree_idx], grad_and_hess[1][tree_idx]))
         return grad_and_hess_subtree
@@ -227,7 +228,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             self.feature_importances_[fid] += tree_feature_importance[fid]
 
     def update_f_value(self, new_f=None, tidx=-1):
-        self.logger.info("update tree f value, tree idx is {}".format(tidx))
+        LOGGER.info("update tree f value, tree idx is {}".format(tidx))
         if self.F is None:
             if self.tree_dim > 1:
                 self.F, self.init_score = self.loss.initialize(self.y, self.tree_dim)
@@ -241,11 +242,11 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             self.F = self.F.join(new_f, accumuldate_f)
 
     def fit(self, data_instances:DTable):
-        self.logger.info("begin to train secureboosting guest model")
+        LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
-        # self.logger.debug("schema is {}".format(data_instances.schema))
+        # LOGGER.debug("schema is {}".format(data_instances.schema))
         data_instances = self.data_alignment(data_instances)
-        # self.logger.debug_data(data_instances)
+        # LOGGER.debug_data(data_instances)
         self.convert_feature_to_bin(data_instances)
         self.set_y()
         self.update_f_value()
@@ -284,7 +285,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             # self.trees_.append(n_tree)
             loss = self.compute_loss()
             self.history_loss.append(loss)
-            self.logger.info("round {} loss is {}".format(i, loss))
+            LOGGER.info("round {} loss is {}".format(i, loss))
 
             if self.n_iter_no_change is True:
                 if self.check_convergence(loss):
@@ -293,12 +294,12 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 else:
                     self.sync_stop_flag(False, i)
 
-            self.logger.debug("history loss is {}".format(min(self.history_loss)))
+            LOGGER.debug("history loss is {}".format(min(self.history_loss)))
 
-            self.logger.info("end to train secureboosting guest model")
+            LOGGER.info("end to train secureboosting guest model")
 
     def predict_f_value(self, data_instances:DTable):
-        self.logger.info("predict tree f value, there are {} trees".format(len(self.trees_)))
+        LOGGER.info("predict tree f value, there are {} trees".format(len(self.trees_)))
         tree_dim = self.tree_dim
         init_score = self.init_score
         self.F = data_instances.mapValues(lambda v: copy.deepcopy(init_score))
@@ -315,7 +316,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 self.update_f_value(new_f=predict_data, tidx=tidx)
 
     def predict(self, data_instances:DTable):
-        self.logger.info("start predict")
+        LOGGER.info("start predict")
         data_instances = self.data_alignment(data_instances)
         self.predict_f_value(data_instances)
         if self.task_type == consts.CLASSIFICATION:
@@ -338,7 +339,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         else:
             raise NotImplementedError("task type {} not supported yet".format(self.task_type)) 
         
-        self.logger.info("end predict")
+        LOGGER.info("end predict")
 
         return predict_result
 

@@ -18,9 +18,10 @@
 #
 ################################################################################
 
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 from ml.param.base_param import BaseParam
 
+LOGGER = MyLoggerFactory().get_logger()
 
 class PredictParam(BaseParam):
     """

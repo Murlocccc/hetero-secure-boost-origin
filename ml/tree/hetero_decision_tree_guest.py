@@ -2,7 +2,7 @@
 from computing.d_table import DTable
 from ml.tree.decision_tree import DecisionTree
 from ml.param.boosting_tree_param import BoostingTreeParam
-from ml.utils.logger import LOGGER, MyLoggerFactory
+from ml.utils.logger import MyLoggerFactory
 from ml.tree.splitter import Splitter
 from ml.utils import consts
 from ml.tree.node import Node
@@ -13,11 +13,12 @@ import copy
 import functools
 import numpy as np
 
+LOGGER = MyLoggerFactory().get_logger()
 
 class HeteroDecisionTreeGuest(DecisionTree):
     def __init__(self, tree_param: BoostingTreeParam):
-        self.logger = MyLoggerFactory().get_logger()
-        self.logger.info('hetero decision tree guest init!')
+        LOGGER = MyLoggerFactory().get_logger()
+        LOGGER.info('hetero decision tree guest init!')
         super().__init__(tree_param)
         self.splitter = Splitter(self.criterion_method, self.criterion_params, self.min_impurity_split,
                                  self.min_sample_split, self.min_leaf_node)
@@ -45,36 +46,36 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.y = None
         
     def set_inputinfo(self, data_bin=None, grad_and_hess=None, bin_split_points=None, bin_sparse_points=None):
-        self.logger.info("set input info")
+        LOGGER.info("set input info")
         self.data_bin = data_bin
         self.grad_and_hess = grad_and_hess
         self.bin_split_points = bin_split_points
         self.bin_sparse_points = bin_sparse_points
 
     def set_valid_features(self, valid_features=None):
-        self.logger.info("set valid features")
+        LOGGER.info("set valid features")
         self.valid_features = valid_features
 
     def set_encrypter(self, encrypter):
-        self.logger.info("set encrypter")
+        LOGGER.info("set encrypter")
         self.encrypter = encrypter
     
     def set_encrypted_mode_calculator(self, encrypted_mode_calculator):
         self.encrypted_mode_calculator = encrypted_mode_calculator
 
     def set_flowid(self, flowid=0):
-        self.logger.info("set flowid, flowid is {}".format(flowid))
+        LOGGER.info("set flowid, flowid is {}".format(flowid))
         # self.transfer_inst.set_flowid(flowid)
         # TODO
 
     def get_grad_hess_sum(self, grad_and_hess_table):
-        self.logger.info("calculate the sum of grad and hess")
+        LOGGER.info("calculate the sum of grad and hess")
         sum_grad, sum_hess = grad_and_hess_table.reduce(
             lambda value1, value2: (value1[0] + value2[0], value1[1] + value2[1]))
         return sum_grad, sum_hess
 
     def dispatch_all_node_to_root(self, root_id=0):
-        self.logger.info("dispatch all node to root")
+        LOGGER.info("dispatch all node to root")
         self.node_dispatch = self.data_bin.mapValues(lambda data_inst: (1, root_id))
 
     def update_feature_importance(self, splitinfo):
@@ -94,7 +95,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.feature_importances_[(sitename, fid)] += inc
 
     def update_tree_node_queue(self, splitinfos, max_depth_reach):
-        self.logger.info("update tree node, splitlist length is {}, tree node queue size is {}".format(
+        LOGGER.info("update tree node, splitlist length is {}, tree node queue size is {}".format(
             len(splitinfos), len(self.tree_node_queue)))
         new_tree_node_queue = []
         for i in range(len(self.tree_node_queue)):
@@ -152,7 +153,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.tree_node_queue = new_tree_node_queue
 
     def get_histograms(self, node_map={}):
-        self.logger.info("start to get node histograms")
+        LOGGER.info("start to get node histograms")
         histograms = FeatureHistogram.calculate_histogram(
             self.data_bin_with_node_dispatch, self.grad_and_hess,
             self.bin_split_points, self.bin_sparse_points,
@@ -192,7 +193,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return TypeError("decode type %s is not support!" % (str(dtype)))
 
     def sync_encrypted_splitinfo_host(self, dep=-1, batch=-1):
-        self.logger.info("get encrypted splitinfo of depth {}, batch {}".format(dep, batch))
+        LOGGER.info("get encrypted splitinfo of depth {}, batch {}".format(dep, batch))
         
         encrypted_splitinfo_host = self.transfer_inst.recv_data_from_hosts(-1)
 
@@ -203,7 +204,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return encrypted_splitinfo_host
 
     def sync_federated_best_splitinfo_host(self, federated_best_splitinfo_host, dep=-1, batch=-1, idx=-1):
-        self.logger.info("send federated best splitinfo of depth {}, batch {}".format(dep, batch))
+        LOGGER.info("send federated best splitinfo of depth {}, batch {}".format(dep, batch))
         
         self.transfer_inst.send_data_to_hosts(federated_best_splitinfo_host, idx)
 
@@ -239,7 +240,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return best_idx, best_gain
 
     def federated_find_split(self, dep=-1, batch=-1):
-        self.logger.info("federated find split of depth {}, batch {}".format(dep, batch))
+        LOGGER.info("federated find split of depth {}, batch {}".format(dep, batch))
         encrypted_splitinfo_host = self.sync_encrypted_splitinfo_host(dep, batch)
 
         for i in range(len(encrypted_splitinfo_host)):
@@ -252,7 +253,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             self.sync_federated_best_splitinfo_host(best_splitinfo_host, dep, batch, i)
 
     def sync_final_split_host(self, dep=-1, batch=-1):
-        self.logger.info("get host final splitinfo of depth {}, batch {}".format(dep, batch))
+        LOGGER.info("get host final splitinfo of depth {}, batch {}".format(dep, batch))
         
         final_splitinfo_host = self.transfer_inst.recv_data_from_hosts(-1)
 
@@ -264,7 +265,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return final_splitinfo_host
 
     def sync_tree_node_queue(self, tree_node_queue, dep=-1):
-        self.logger.info("send tree node queue of depth {}".format(dep))
+        LOGGER.info("send tree node queue of depth {}".format(dep))
         mask_tree_node_queue = copy.deepcopy(tree_node_queue)
         for i in range(len(mask_tree_node_queue)):
             mask_tree_node_queue[i] = Node(id=mask_tree_node_queue[i].id)
@@ -278,7 +279,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
 
     def sync_encrypted_grad_and_hess(self):
-        self.logger.info("send encrypted grad and hess to host")
+        LOGGER.info("send encrypted grad and hess to host")
         encrypted_grad_and_hess = self.encrypt_grad_and_hess()
         self.transfer_inst.send_data_to_hosts(encrypted_grad_and_hess, -1)
         # federation.remote(obj=encrypted_grad_and_hess,
@@ -288,7 +289,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
     
     def sync_node_positions(self, dep):
-        self.logger.info("send node positions of depth {}".format(dep))
+        LOGGER.info("send node positions of depth {}".format(dep))
         
         self.transfer_inst.send_data_to_hosts(self.node_dispatch, -1)
         # federation.remote(obj=self.node_dispatch,
@@ -298,7 +299,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
 
     def sync_dispatch_node_host(self, dispatch_guest_data, dep=-1):
-        self.logger.info("send node to host to dispath, depth is {}".format(dep))
+        LOGGER.info("send node to host to dispath, depth is {}".format(dep))
         
         self.transfer_inst.send_data_to_hosts(dispatch_guest_data, -1)
 
@@ -309,7 +310,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
 
     def sync_dispatch_node_host_result(self, dep=-1):
-        self.logger.info("get host dispatch result, depth is {}".format(dep))
+        LOGGER.info("get host dispatch result, depth is {}".format(dep))
         
         dispatch_node_host_result = self.transfer_inst.recv_data_from_hosts(-1)
 
@@ -321,7 +322,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return dispatch_node_host_result
 
     def sync_tree(self):
-        self.logger.info("sync tree to host")
+        LOGGER.info("sync tree to host")
 
         self.transfer_inst.send_data_to_hosts(self.tree_, -1)
 
@@ -332,7 +333,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
 
     def sync_predict_finish_tag(self, finish_tag, send_times):
-        self.logger.info("send the {}-th predict finish tag {} to host".format(finish_tag, send_times))
+        LOGGER.info("send the {}-th predict finish tag {} to host".format(finish_tag, send_times))
         
         self.transfer_inst.send_data_to_hosts(finish_tag, -1)
 
@@ -343,7 +344,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
 
     def sync_predict_data(self, predict_data, send_times):
-        self.logger.info("send predict data to host, sending times is {}".format(send_times))
+        LOGGER.info("send predict data to host, sending times is {}".format(send_times))
         
         self.transfer_inst.send_data_to_hosts(predict_data, -1)
 
@@ -354,7 +355,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         #                   idx=-1)
 
     def convert_bin_to_real(self):
-        self.logger.info("convert tree node bins to real value")
+        LOGGER.info("convert tree node bins to real value")
         for i in range(len(self.tree_)):
             if self.tree_[i].is_leaf is True:
                 continue
@@ -384,7 +385,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
                         nodeid, tree_[nodeid].left_nodeid, tree_[nodeid].right_nodeid)
 
     def redispatch_node(self, dep=-1):
-        self.logger.info("redispatch node of depth {}".format(dep))
+        LOGGER.info("redispatch node of depth {}".format(dep))
         dispatch_node_method = functools.partial(self.dispatch_node,
                                                  tree_=self.tree_,
                                                  decoder=self.decode,
@@ -392,7 +393,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
                                                  bin_sparse_points=self.bin_sparse_points)
         dispatch_guest_result = self.data_bin_with_node_dispatch.mapValues(dispatch_node_method)
         tree_node_num = self.tree_node_num
-        self.logger.info("remask dispatch node result of depth {}".format(dep))
+        LOGGER.info("remask dispatch node result of depth {}".format(dep))
         
         dispatch_to_host_result = dispatch_guest_result.filter(lambda key, value: isinstance(value, tuple) and len(value) > 2)
        
@@ -424,7 +425,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             self.node_dispatch = self.node_dispatch.union(dispatch_guest_result)
 
     def encrypt_grad_and_hess(self):
-        self.logger.info("start to encrypt grad and hess")
+        LOGGER.info("start to encrypt grad and hess")
         return self.grad_and_hess
         encrypted_grad_and_hess = self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
         return encrypted_grad_and_hess
@@ -449,7 +450,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return best_splitinfo
 
     def merge_splitinfo(self, splitinfo_guest, splitinfo_host):
-        self.logger.info("merge splitinfo")
+        LOGGER.info("merge splitinfo")
         merge_infos = []
         for i in range(len(splitinfo_guest)):
             splitinfo = [splitinfo_guest[i]]
@@ -465,7 +466,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return best_splitinfos
 
     def fit(self):
-        self.logger.info("begin to fit guest decision tree")
+        LOGGER.info("begin to fit guest decision tree")
 
         self.sync_encrypted_grad_and_hess()
 
@@ -477,7 +478,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.dispatch_all_node_to_root()
 
         for dep in range(self.max_depth):
-            self.logger.info("start to fit depth {}, tree node queue size is {}".format(dep, len(self.tree_node_queue)))
+            LOGGER.info("start to fit depth {}, tree node queue size is {}".format(dep, len(self.tree_node_queue)))
 
             self.sync_tree_node_queue(self.tree_node_queue, dep)
             if len(self.tree_node_queue) == 0:
@@ -518,23 +519,23 @@ class HeteroDecisionTreeGuest(DecisionTree):
             self.redispatch_node(dep)
         
         self.sync_tree()
-        # self.logger.debug('len of tree_ is {}'.format(len(self.tree_)))
+        # LOGGER.debug('len of tree_ is {}'.format(len(self.tree_)))
         self.convert_bin_to_real()
         tree_ = self.tree_
-        self.logger.info("tree node num is %d" % len(tree_))
+        LOGGER.info("tree node num is %d" % len(tree_))
         purity_list = []
         count_list = []
         for nodeid_purity_count in self._nodeid_purity_list:
             nodeid, purity, count = nodeid_purity_count
             purity_list.append(purity)
             count_list.append(count)
-            self.logger.debug('node with id = {} is a leaf, its purity = {}, count is {}'.format(nodeid, purity, count))
-        self.logger.debug('the average of the purity is {}'.format(np.average(purity_list)))
-        self.logger.debug('the maximum of the purity is {}'.format(np.max(purity_list)))
-        self.logger.debug('the minimun of the purity is {}'.format(np.min(purity_list)))
-        self.logger.debug('the weighted average of the purity is {}'.format(np.average(purity_list, weights=count_list)))
+            LOGGER.debug('node with id = {} is a leaf, its purity = {}, count is {}'.format(nodeid, purity, count))
+        LOGGER.debug('the average of the purity is {}'.format(np.average(purity_list)))
+        LOGGER.debug('the maximum of the purity is {}'.format(np.max(purity_list)))
+        LOGGER.debug('the minimun of the purity is {}'.format(np.min(purity_list)))
+        LOGGER.debug('the weighted average of the purity is {}'.format(np.average(purity_list, weights=count_list)))
 
-        self.logger.info("end to fit guest decision tree")
+        LOGGER.info("end to fit guest decision tree")
         
     def get_model(self):
         model_meta = self.get_model_meta()
@@ -574,7 +575,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return self.feature_importances_
 
     def load_model(self, model_meta=None, model_param=None):
-        self.logger.info("load tree model")
+        LOGGER.info("load tree model")
         self.set_model_meta(model_meta)
         self.set_model_param(model_param)
 
@@ -606,7 +607,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
         predict_data = self.transfer_inst.recv_data_from_hosts(-1)
 
-        self.logger.info("get predicted data by host, recv times is {}".format(send_times))
+        LOGGER.info("get predicted data by host, recv times is {}".format(send_times))
         # predict_data = federation.get(name=self.transfer_inst.predict_data_by_host.name,
         #                               tag=self.transfer_inst.generate_transferid(
         #                                   self.transfer_inst.predict_data_by_host, send_times),
@@ -633,7 +634,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return nid, 1
 
     def predict(self, data_instances):
-        self.logger.info("start to predict!")
+        LOGGER.info("start to predict!")
         predict_data = data_instances.mapValues(lambda data_inst: (0, 1))
         site_host_send_times = 0
         predict_result = None
@@ -670,7 +671,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
             site_host_send_times += 1
 
-        self.logger.info("predict finish!")
+        LOGGER.info("predict finish!")
         return predict_result
 
     def set_y(self, y: DTable):

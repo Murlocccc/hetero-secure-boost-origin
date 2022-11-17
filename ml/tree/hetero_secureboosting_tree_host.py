@@ -1,12 +1,14 @@
 
 
 from ml.tree.boosting_tree import BoostingTree
-from ml.utils.logger import LOGGER, MyLoggerFactory
+from ml.utils.logger import MyLoggerFactory
 from ml.utils import consts
 from ml.feature.binning.quantile_binning import QuantileBinning
 from ml.param.feature_binning_param import FeatureBinningParam
 from ml.tree.hetero_decision_tree_host import HeteroDecisionTreeHost
 from numpy import random
+
+LOGGER = MyLoggerFactory().get_logger()
 
 class HeteroSecureBoostingTreeHost(BoostingTree):
     def __init__(self):
@@ -22,22 +24,21 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         self.data_bin = None
         self.runtime_idx = 0
         self.role = consts.HOST
-        self.logger = MyLoggerFactory().get_logger()
 
     def set_runtime_idx(self, runtime_idx):
         self.runtime_idx = runtime_idx
 
     def convert_feature_to_bin(self, data_instances):
-        self.logger.info("convert feature to bins")
+        LOGGER.info("convert feature to bins")
         param_obj = FeatureBinningParam(bin_num=self.bin_num)
         binning_obj = QuantileBinning(param_obj) 
         binning_obj.fit_split_points(data_instances)
         self.data_bin, self.bin_split_points, self.bin_sparse_points = binning_obj.convert_feature_to_bin(data_instances)
-        # self.logger.debug('len of bin_sparse_points is {}'.format(len(self.bin_sparse_points)))
-        self.logger.info("convert feature to bins over")
+        # LOGGER.debug('len of bin_sparse_points is {}'.format(len(self.bin_sparse_points)))
+        LOGGER.info("convert feature to bins over")
 
     def sample_valid_features(self):
-        self.logger.info("sample valid features")
+        LOGGER.info("sample valid features")
         if self.feature_num is None:
             self.feature_num = self.bin_split_points.shape[0]
 
@@ -55,19 +56,19 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
             self.feature_name_fid_mapping[header[i]] = i
 
     def generate_flowid(self, round_num, tree_num):
-        self.logger.info("generate flowid, flowid {}".format(self.flowid))
+        LOGGER.info("generate flowid, flowid {}".format(self.flowid))
         return ".".join(map(str, [self.flowid, round_num, tree_num]))
 
     def sync_tree_dim(self):
-        self.logger.info("sync tree dim from guest")
+        LOGGER.info("sync tree dim from guest")
         self.tree_dim = self.transfer_inst.recv_data_from_guest()
         # self.tree_dim = federation.get(name=self.transfer_inst.tree_dim.name,
         #                                tag=self.transfer_inst.generate_transferid(self.transfer_inst.tree_dim),
         #                                idx=0)
-        self.logger.info("tree dim is %d" % (self.tree_dim))
+        LOGGER.info("tree dim is %d" % (self.tree_dim))
 
     def sync_stop_flag(self, num_round):
-        self.logger.info("sync stop flag from guest, boosting round is {}".format(num_round))
+        LOGGER.info("sync stop flag from guest, boosting round is {}".format(num_round))
         stop_flag = self.transfer_inst.recv_data_from_guest()
         
         # stop_flag = federation.get(name=self.transfer_inst.stop_flag.name,
@@ -77,9 +78,9 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         return stop_flag
 
     def fit(self, data_instances):
-        self.logger.info("begin to train secureboosting guest model")
+        LOGGER.info("begin to train secureboosting guest model")
         self.gen_feature_fid_mapping(data_instances.schema)
-        self.logger.debug("schema is {}".format(data_instances.schema))
+        LOGGER.debug("schema is {}".format(data_instances.schema))
         data_instances = self.data_alignment(data_instances)
         self.convert_feature_to_bin(data_instances)
         self.sync_tree_dim()
@@ -113,10 +114,10 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
                 if stop_flag:
                     break
 
-        self.logger.info("end to train secureboosting guest model")
+        LOGGER.info("end to train secureboosting guest model")
 
     def predict(self, data_instances, predict_param=None):
-        self.logger.info("start predict")
+        LOGGER.info("start predict")
         data_instances = self.data_alignment(data_instances)
         rounds = len(self.trees_) // self.tree_dim
         for i in range(rounds):
@@ -131,4 +132,4 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
 
                 tree_inst.predict(data_instances)
 
-        self.logger.info("end predict")
+        LOGGER.info("end predict")

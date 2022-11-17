@@ -13,8 +13,6 @@ from ml.utils.logger import MyLoggerFactory
 from federation.transfer_inst import TransferInstHost
 import random
 import sys
-import logging
-from ml.utils.logger import LOGGER
 import time
 
 
@@ -49,13 +47,10 @@ def test_hetero_seucre_boost_host():
     port = int(argv[2])
     run_time_idx = int(argv[3])
 
-    # 初始化 log 模块
-    LOGGER.basic_config(filename=time.strftime("log/host{}_%Y-%m-%d-%H_%M_%S".format(run_time_idx))+'.log', level=logging.DEBUG)
-
     # 记录一些参数设置到日志
-    LOGGER.info('here is the host_{}'.format(run_time_idx))
-    LOGGER.info('train_file is {}'.format(train_csv_address))
-    LOGGER.info('test_file is {}'.format(test_csv_address))
+    my_logger.info('here is the host_{}'.format(run_time_idx))
+    my_logger.info('train_file is {}'.format(train_csv_address))
+    my_logger.info('test_file is {}'.format(test_csv_address))
 
     # 实例化 host 传输实体
     transfer_inst = TransferInstHost(port=port)
@@ -96,8 +91,8 @@ def test_hetero_seucre_boost_host():
     test_instances.schema['header'] = header2
 
     # 记录数据集相关信息到日志
-    LOGGER.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
-    LOGGER.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
+    my_logger.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
+    my_logger.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
 
     # fit
     hetero_secure_boost_host.fit(data_instances=train_instances)

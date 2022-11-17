@@ -25,8 +25,9 @@ from ml.param.feature_binning_param import FeatureBinningParam
 from ml.statistic import data_overview
 from ml.utils import consts
 
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 
+LOGGER = MyLoggerFactory().get_logger()
 
 class SummaryStatistics(object):
     def __init__(self, abnormal_list=None):

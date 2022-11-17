@@ -16,7 +16,9 @@
 #  limitations under the License.
 #
 from ml.utils.param_extract import ParamExtract
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
+
+LOGGER = MyLoggerFactory().get_logger()
 
 class ModelBase(object):
     def __init__(self):

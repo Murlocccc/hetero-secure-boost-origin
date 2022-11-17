@@ -15,7 +15,6 @@
 #
 
 from ml.utils import consts
-from ml.utils.logger import LOGGER
 
 from ml.utils import fate_operator
 import numpy as np

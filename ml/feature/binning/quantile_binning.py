@@ -1,6 +1,5 @@
 
 
-from ml.utils.logger import LOGGER
 from ml.feature.binning.base_binning import Binning
 from ml.param.feature_binning_param import FeatureBinningParam
 from computing.d_table import DTable

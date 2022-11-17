@@ -18,8 +18,9 @@
 #
 from ml.utils import consts
 from ml.param.base_param import BaseParam
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 
+LOGGER = MyLoggerFactory().get_logger()
 
 class EvaluateParam(BaseParam):
     """

@@ -1,6 +1,5 @@
 import socket
 import pickle
-from ml.utils.logger import LOGGER
 
 class TransferInst:
     def __init__(self) -> None:

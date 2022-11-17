@@ -6,7 +6,7 @@
 #   - the type of the task, only support 'CLASSIFICATION'
 #   - the port for federation
 
-from ml.utils.logger import LOGGER, MyLoggerFactory
+from ml.utils.logger import MyLoggerFactory
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_guest import HeteroSecureBoostingTreeGuest
 from i_o.utils import read_from_csv_with_lable
@@ -15,8 +15,6 @@ from federation.transfer_inst import TransferInstGuest
 from ml.utils import consts
 import random
 import sys
-import logging
-from ml.utils.logger import LOGGER
 import time
 
 my_logger = MyLoggerFactory.build("guest")
@@ -50,13 +48,12 @@ def test_hetero_secure_boost_guest():
     port = int(argv[4])
 
     # 初始化 log 模块
-    LOGGER.basic_config(filename=time.strftime("log/guest_%Y-%m-%d-%H_%M_%S")+'.log', level=logging.DEBUG)
 
     # 记录一些参数设置到日志
-    LOGGER.info('here is the guest')
-    LOGGER.info('train_file is {}'.format(train_csv_address))
-    LOGGER.info('test_file is {}'.format(test_csv_address))
-    LOGGER.info('task_type is {}'.format(task_type))
+    my_logger.info('here is the guest')
+    my_logger.info('train_file is {}'.format(train_csv_address))
+    my_logger.info('test_file is {}'.format(test_csv_address))
+    my_logger.info('task_type is {}'.format(task_type))
 
     # 实例化 guest 传输实体
     transfer_inst = TransferInstGuest(port, num_hosts)
@@ -100,8 +97,8 @@ def test_hetero_secure_boost_guest():
     test_instances.schema['header'] = header2
 
     # 记录数据集相关信息到日志
-    LOGGER.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
-    LOGGER.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
+    my_logger.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
+    my_logger.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
 
     # fit
     hetero_secure_boost_guest.fit(data_instances=train_instances)
@@ -129,7 +126,7 @@ def test_hetero_secure_boost_guest():
 
     # 计算并输出混淆矩阵
     statistic = predict_result.mapPartitions(cal_statistic).reduce(lambda a, b: a + b)
-    LOGGER.info('(TP, TN, FP, FN) is {}'.format(statistic))
+    my_logger.info('(TP, TN, FP, FN) is {}'.format(statistic))
 
 def data_split(full_list, ratio, shuffle=False, random_seed=None):
     """

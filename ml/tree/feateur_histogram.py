@@ -27,7 +27,7 @@
 import functools
 import copy
 import numpy as np
-from ml.utils.logger import LOGGER, MyLoggerFactory
+from ml.utils.logger import MyLoggerFactory
 from computing.d_table import DTable
 
 logger = MyLoggerFactory().get_logger()
