@@ -27,13 +27,15 @@
 import functools
 import copy
 import numpy as np
-from ml.utils.logger import LOGGER
+from ml.utils.logger import LOGGER, MyLoggerFactory
 from computing.d_table import DTable
 
-
+logger = MyLoggerFactory().get_logger()
 class FeatureHistogram(object):
+    # logger = MyLoggerFactory().get_logger()
     def __init__(self):
         pass
+
 
     @staticmethod
     def accumulate_histogram(histograms):
@@ -46,7 +48,7 @@ class FeatureHistogram(object):
         return histograms
 
     @staticmethod
-    def calculate_histogram(data_bin: DTable, grad_and_hess,
+    def calculate_histogram( data_bin: DTable, grad_and_hess,
                             bin_split_points:np.array, bin_sparse_points:list,
                             valid_features:list=None, node_map:dict=None):
         
@@ -57,7 +59,7 @@ class FeatureHistogram(object):
         # print('valid_features is \n', valid_features)
         # print('node_map is \n', node_map)
 
-        LOGGER.info("bin_shape is {}, node num is {}".format(bin_split_points.shape, len(node_map)))
+        logger.info("bin_shape is {}, node num is {}".format(bin_split_points.shape, len(node_map)))
         batch_histogram_cal = functools.partial(
             FeatureHistogram.batch_calculate_histogram,
             bin_split_points=bin_split_points, bin_sparse_points=bin_sparse_points,
@@ -104,7 +106,7 @@ class FeatureHistogram(object):
 
             data_record += 1
 
-        LOGGER.info("begin batch calculate histogram, data count is {}".format(data_record))
+        logger.info("begin batch calculate histogram, data count is {}".format(data_record))
         node_num = len(node_map)
         zero_optim = [[[0 for i in range(3)]
                        for j in range(bin_split_points.shape[0])]

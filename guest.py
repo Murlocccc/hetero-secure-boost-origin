@@ -6,16 +6,17 @@
 #   - the type of the task, only support 'CLASSIFICATION'
 #   - the port for federation
 
-
+from ml.utils.logger import LOGGER, MyLoggerFactory
 from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_guest import HeteroSecureBoostingTreeGuest
 from i_o.utils import read_from_csv_with_lable
 from ml.feature.instance import Instance
-from ml.utils.logger import LOGGER
 from federation.transfer_inst import TransferInstGuest
 from ml.utils import consts
 import random
 import sys
+
+my_logger = MyLoggerFactory.build("guest")
 
 def getArgs():
     argv = sys.argv[1:]

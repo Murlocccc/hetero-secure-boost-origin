@@ -9,10 +9,13 @@ from computing.d_table import DTable
 from ml.tree.hetero_secureboosting_tree_host import HeteroSecureBoostingTreeHost
 from i_o.utils import read_from_csv_with_no_lable
 from ml.feature.instance import Instance
-from ml.utils.logger import LOGGER
+from ml.utils.logger import MyLoggerFactory
 from federation.transfer_inst import TransferInstHost
 import random
 import sys
+
+
+my_logger = MyLoggerFactory.build("host")
 
 def getArgs():
     argv = sys.argv[1:]
