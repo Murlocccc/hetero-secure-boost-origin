@@ -37,7 +37,7 @@ class MyLoggerFactory:
     logger = logging.getLogger()
     @classmethod
     def build(cls,user_name:str="default"):
-        cls.logger = logging.getLogger(user_name)
+        # cls.logger.set
         cls.logger.setLevel(logging.DEBUG)
         if not os.path.exists('log'):
             os.mkdir("log")

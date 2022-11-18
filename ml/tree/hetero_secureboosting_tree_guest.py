@@ -7,7 +7,7 @@ from ml.feature.instance import Instance
 from ml.param.feature_binning_param import FeatureBinningParam
 from ml.feature.binning.quantile_binning import QuantileBinning
 from ml.utils.classfiy_label_checker import ClassifyLabelChecker, RegressionLabelChecker
-from ml.secureprotol.encrypt import PaillierEncrypt
+from ml.secureprotol.encrypt import PaillierEncrypt, PlainEncrypt
 from ml.secureprotol.encrypt_mode import EncryptModeCalculator
 from ml.tree.hetero_decision_tree_guest import HeteroDecisionTreeGuest
 from ml.optim.convergence import DiffConverge
@@ -101,6 +101,8 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         if self.encrypt_param.method == consts.PAILLIER:
             self.encrypter = PaillierEncrypt()
             self.encrypter.generate_key(self.encrypt_param.key_length)
+        elif self.encrypt_param.method == consts.PLAINTEXT:
+            self.encrypter = PlainEncrypt()
         else:
             raise NotImplementedError("encrypt method not supported yes!!!")
 

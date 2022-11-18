@@ -195,7 +195,7 @@ class PaillierEncrypt(Encrypt):
             return None
 
 
-class FakeEncrypt(Encrypt):
+class PlainEncrypt(Encrypt):
     def encrypt(self, value):
         return value
 

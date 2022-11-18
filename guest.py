@@ -13,6 +13,7 @@ from i_o.utils import read_from_csv_with_lable
 from ml.feature.instance import Instance
 from federation.transfer_inst import TransferInstGuest
 from ml.utils import consts
+from ml.param.encrypt_param import EncryptParam
 import random
 import sys
 import time
@@ -69,6 +70,7 @@ def test_hetero_secure_boost_guest():
     #     hetero_secure_boost_guest.model_param.task_type = consts.REGRESSION
     else:
         raise ValueError('the value of param task_type wrong')
+    hetero_secure_boost_guest.model_param.encrypt_param = EncryptParam(consts.PLAINTEXT)
 
     # 使用设置的参数以及默认参数，对 hetero secure boost tree guest 进行初始化
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
@@ -106,6 +108,17 @@ def test_hetero_secure_boost_guest():
     # predict
     predict_result = hetero_secure_boost_guest.predict(test_instances)
 
+    def cal_accuracy(kvs):
+        correct_num = 0
+        for _, v in kvs:
+            if v[0] == v[1]:
+                correct_num += 1
+        return [correct_num / len(kvs)]
+
+    accuracy = predict_result.mapPartitions(cal_accuracy).reduce(lambda a, b: a + b)
+
+    my_logger.info(f'accuracy is {accuracy}')
+
     # print(predict_result)
 
     # 得到二分类混淆矩阵的函数
@@ -127,6 +140,7 @@ def test_hetero_secure_boost_guest():
     # 计算并输出混淆矩阵
     statistic = predict_result.mapPartitions(cal_statistic).reduce(lambda a, b: a + b)
     my_logger.info('(TP, TN, FP, FN) is {}'.format(statistic))
+
 
 def data_split(full_list, ratio, shuffle=False, random_seed=None):
     """
