@@ -54,6 +54,9 @@ class EncryptParam(BaseParam):
                 self.method = consts.PAILLIER
             elif user_input == 'plaintext':
                 self.method = consts.PLAINTEXT
+            else:
+                raise ValueError(
+                "encrypt_param's method {} not supported".format(self.method))
 
         if type(self.key_length).__name__ != "int":
             raise ValueError(

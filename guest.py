@@ -17,12 +17,22 @@ from ml.param.encrypt_param import EncryptParam
 import random
 import sys
 import time
+import argparse
 
 my_logger = MyLoggerFactory.build("guest")
 
 def getArgs():
-    argv = sys.argv[1:]
-    return argv
+    import argparse
+    parser = argparse.ArgumentParser(description='secureboost cmd')
+    parser.add_argument("--dataset", type=str, help="pre define dataset", default="")
+    parser.add_argument('--train_file', type=str, help='path for train file', default="")
+    parser.add_argument('--test_file', type=str, help='path for test file', default="")
+    parser.add_argument('--num_hosts', type=int, help='the number of hosts', default=1)
+    parser.add_argument('--task_type', type=str, help='the proportion of data divided', default="CLASSIFICATION")
+    parser.add_argument('--port', type=int, help='the port for federation', default=10086)
+    parser.add_argument('--encrypt', type=str, help='select the add HE style: Paillier | Plaintext', default="Plaintext")
+    args = parser.parse_args(sys.argv[1:])
+    return args
 
 def test_hetero_secure_boost_guest():
 
@@ -41,22 +51,27 @@ def test_hetero_secure_boost_guest():
     # python guest.py data/vehicle_scale_hetero/vehicle_scale_hetero_train_guest.csv data/vehicle_scale_hetero/vehicle_scale_hetero_test_guest.csv 1 CLASSIFICATION 10086
 
     # 获取命令行参数
-    argv = getArgs()
-    train_csv_address = argv[0]
-    test_csv_address = argv[1]
-    num_hosts = int(argv[2])
-    task_type = argv[3]
-    port = int(argv[4])
-
-    # 初始化 log 模块
+    args = getArgs()
+    if len(args.dataset) > 0:
+        if args.dataset not in DATASET_DICT:
+            my_logger.error(f"dataset error! {args.dataset} haven't not set")
+            exit(1)
+        train_csv_address = DATASET_DICT[args.dataset]['train_file']
+        test_csv_address = DATASET_DICT[args.dataset]['test_file']
+    else:
+        train_csv_address = args.train_file
+        test_csv_address = args.test_file
+    num_hosts = args.num_hosts
+    task_type = args.task_type
+    port = args.port
+    encrypt_param_str = args.encrypt
 
     # 记录一些参数设置到日志
-    my_logger.info('here is the guest')
-    my_logger.info('train_file is {}'.format(train_csv_address))
-    my_logger.info('test_file is {}'.format(test_csv_address))
-    my_logger.info('task_type is {}'.format(task_type))
+    my_logger.info('Here is the guest')
 
+    my_logger.info(f'{"="*20} Init {"="*20}')
     # 实例化 guest 传输实体
+    my_logger.info(f'--Port={port}, num_hosts={num_hosts}')
     transfer_inst = TransferInstGuest(port, num_hosts)
 
     # 实例化 hetero secure boost tree guest 实体
@@ -64,13 +79,20 @@ def test_hetero_secure_boost_guest():
 
     # 设置 hetero secure boost tree guest 的参数
     hetero_secure_boost_guest.model_param.tree_param.max_depth=5
+
+
+    my_logger.info('--task_type is {}'.format(task_type))
     if task_type == 'CLASSIFICATION':
         hetero_secure_boost_guest.model_param.task_type = consts.CLASSIFICATION
     # elif task_type == 'REGRESSION':
     #     hetero_secure_boost_guest.model_param.task_type = consts.REGRESSION
     else:
         raise ValueError('the value of param task_type wrong')
-    hetero_secure_boost_guest.model_param.encrypt_param = EncryptParam(consts.PLAINTEXT)
+
+    my_logger.info(f'--encrypt={encrypt_param_str}')
+    encrypt_param = EncryptParam(encrypt_param_str)
+    if encrypt_param.check():
+        hetero_secure_boost_guest.model_param.encrypt_param = encrypt_param
 
     # 使用设置的参数以及默认参数，对 hetero secure boost tree guest 进行初始化
     hetero_secure_boost_guest._init_model(hetero_secure_boost_guest.model_param)
@@ -79,6 +101,9 @@ def test_hetero_secure_boost_guest():
     hetero_secure_boost_guest.set_transfer_inst(transfer_inst)
 
     # 从训练集文件和测试集文件读取数据
+    my_logger.info(f'--dataset log info')
+    my_logger.info('\ttrain_file is {}'.format(train_csv_address))
+    my_logger.info('\ttest_file is {}'.format(test_csv_address))
     header1, ids1, features1, lables1 = read_from_csv_with_lable(train_csv_address)
     header2, ids2, features2, lables2 = read_from_csv_with_lable(test_csv_address)
     
@@ -102,6 +127,8 @@ def test_hetero_secure_boost_guest():
     my_logger.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
     my_logger.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
 
+
+    my_logger.info(f'{"="*20} Fit {"="*20}')
     # fit
     hetero_secure_boost_guest.fit(data_instances=train_instances)
 

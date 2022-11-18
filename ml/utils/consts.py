@@ -23,7 +23,7 @@ MULTY = 'multi'
 CLASSIFICATION = "classification"
 REGRESSION = 'regression'
 PAILLIER = 'Paillier'
-PLAINTEXT = 'plaintext'
+PLAINTEXT = 'Plaintext'
 L1_PENALTY = 'L1'
 L2_PENALTY = 'L2'
 
