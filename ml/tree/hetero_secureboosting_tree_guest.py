@@ -261,7 +261,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             self.compute_grad_and_hess()
             for tidx in range(self.tree_dim):
                 LOGGER.info('============TREE_{}.{} START=============='.format(i, tidx))
-                tree_inst = HeteroDecisionTreeGuest(self.tree_param)
+                tree_inst = HeteroDecisionTreeGuest(self.tree_param, i==0)
 
                 tree_inst.set_inputinfo(self.data_bin, self.get_grad_and_hess(tidx), self.bin_split_points,
                                         self.bin_sparse_points)

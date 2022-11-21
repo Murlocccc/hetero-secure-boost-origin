@@ -31,7 +31,7 @@ from ml.utils import consts
 class Node(object):
     def __init__(self, id:int=None, sitename=consts.GUEST, fid:int=None,
                  bid:int=None, weight:float=0, is_leaf:bool=False, sum_grad:float=None,
-                 sum_hess:float=None, left_nodeid:int=-1, right_nodeid:int=-1):
+                 sum_hess:float=None, left_nodeid:int=-1, right_nodeid:int=-1, node_dispatch:list=None):
         self.id = id
         self.sitename = sitename
         self.fid = fid
@@ -42,6 +42,12 @@ class Node(object):
         self.sum_hess = sum_hess
         self.left_nodeid = left_nodeid
         self.right_nodeid = right_nodeid
+        self.node_dispatch = list() if node_dispatch is None else node_dispatch
+
+    def __str__(self):
+        return  f"TreeNode[{self.id}] \n"\
+                f"\tleft_nodeid = {self.left_nodeid}, right_nodeid={self.right_nodeid}\n"\
+                f"\tnode_dispatch({len(self.node_dispatch)})= {self.node_dispatch}\n"
 
 
 class SplitInfo(object):

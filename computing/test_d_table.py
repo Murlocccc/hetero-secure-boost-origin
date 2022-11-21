@@ -97,9 +97,10 @@ class TestDTable(unittest.TestCase):
         t1 = DTable(False, [5,6,7])
 
         def func(k, v):
-            return k + v ** 2
+            return (k, k + v ** 2)
         
         t2 = t1.map(func)
+        print(t2)
 
         self.assertEqual(dict(t2.collect()), {0:25, 1:37, 2:51})
 

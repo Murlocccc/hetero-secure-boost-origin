@@ -21,12 +21,13 @@ class DTable(CTableABC):
                         # 下面这句话跑不通不知道问什么，只好换个写法
                         # if isinstance(item, typing.Tuple[typing.Any, typing.Any]):
                         if isinstance(item, typing.Tuple) and len(item) == 2:
+                            # todo: support multi same key(multi dict)
                             if item[0] in self.__data:
                                 raise ValueError('the param data has duplicate key: {}'.format(item[0]))
                             else:
                                 self.__data[item[0]] = item[1]
                         else:
-                            raise TypeError('every element in data should be a Tuper[Object, Object] while include_key = True !')
+                            raise TypeError(f'every element in data should be a Tuper[Object, Object] while include_key = True ! But {type(item)}')
                 else:  # include_key == False
                     self.__data = {}
                     for i,item in enumerate(data):
@@ -52,11 +53,14 @@ class DTable(CTableABC):
 
     # 这个写的是真的丑，有空再想想怎么改
     def first(self, **kargs):
-        if len(self.__data) == 0:
-            return None
-        else:
-            k = list(self.__data.keys())[0]
+        for k in self.__data.keys():
             return self.__data[k]
+        return None
+        # if len(self.__data) == 0:
+        #     return None
+        # else:
+        #     k = list(self.__data.keys())[0]
+        #     return self.__data[k]
 
     def count(self) -> int:
         return len(self.__data)
@@ -64,7 +68,7 @@ class DTable(CTableABC):
     def map(self, func: typing.Callable) -> 'CTableABC':
         new_table = []
         for k, v in self.__data.items():
-            new_table.append((k, func(k, v)))
+            new_table.append(func(k, v))
         return DTable(True, new_table)
     
     def mapValues(self, func: typing.Callable):

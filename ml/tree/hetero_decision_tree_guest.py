@@ -12,11 +12,13 @@ from arch.api.boosting_tree_model_param_pb2 import DecisionTreeModelParam
 import copy
 import functools
 import numpy as np
+import os
+import time
 
 LOGGER = MyLoggerFactory().get_logger()
 
 class HeteroDecisionTreeGuest(DecisionTree):
-    def __init__(self, tree_param: BoostingTreeParam):
+    def __init__(self, tree_param: BoostingTreeParam, is_first=False):
         LOGGER = MyLoggerFactory().get_logger()
         LOGGER.info('hetero decision tree guest init!')
         super().__init__(tree_param)
@@ -44,6 +46,11 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.runtime_idx = 0
         self.feature_importances_ = {}
         self.y = None
+        self.is_first = is_first
+        self.node_dispatch_log_path = 'node_dispatch_log/'
+        if self.node_dispatch_log_path!= None and not os.path.exists(self.node_dispatch_log_path):
+            os.mkdir(self.node_dispatch_log_path)
+        LOGGER.debug("It's the first tree" if self.is_first else "It isn't the first tree")
         
     def set_inputinfo(self, data_bin=None, grad_and_hess=None, bin_split_points=None, bin_sparse_points=None):
         LOGGER.info("set input info")
@@ -428,8 +435,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
         return encrypted_grad_and_hess
 
     def find_best_split_guest_and_host(self, splitinfo_guest_host):
-        best_gain_host = self.decrypt(splitinfo_guest_host[1].gain)
-        best_gain_host_idx = 1
+        best_gain_host = -1000000000
+        best_gain_host_idx = 0
         for i in range(1, len(splitinfo_guest_host)):
             gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
             if best_gain_host < gain_host_i:
@@ -504,7 +511,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
                 self.federated_find_split(dep, batch)
                 final_splitinfo_host = self.sync_final_split_host(dep, batch)
-
+                if self.is_first:
+                    final_splitinfo_host = []
                 cur_splitinfos = self.merge_splitinfo(self.best_splitinfo_guest, final_splitinfo_host)
                 splitinfos.extend(cur_splitinfos)
 
@@ -512,14 +520,24 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
             max_depth_reach = True if dep + 1 == self.max_depth else False
             self.update_tree_node_queue(splitinfos, max_depth_reach)
-
+            self.save_node_dispatch()
             self.redispatch_node(dep)
         
+        self.save_node_dispatch()
         self.sync_tree()
+
         # LOGGER.debug('len of tree_ is {}'.format(len(self.tree_)))
         self.convert_bin_to_real()
         tree_ = self.tree_
         LOGGER.info("tree node num is %d" % len(tree_))
+        # 把树结构输出到文件
+        file_name = self.node_dispatch_log_path + "Tree_struction" + time.strftime("_%Y-%m-%d-%H_%M_%S".format(self.runtime_idx)) + '.log'
+        f = open(file_name, 'w', newline='', encoding='utf-8')
+        for node in self.tree_:
+            f.write(str(node))
+        f.write("\n\n\n")
+        f.close()
+
         purity_list = []
         count_list = []
         for nodeid_purity_count in self._nodeid_purity_list:
@@ -673,3 +691,10 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
     def set_y(self, y: DTable):
         self.y = y
+
+    def save_node_dispatch(self):
+        LOGGER.debug(f"node_dispatch !! = [{str(self.node_dispatch)}]")
+        now_dep_node_dispatch = self.node_dispatch.mapValues(lambda x:x[1]).collect()
+        for k,v in now_dep_node_dispatch:
+            self.tree_[v].node_dispatch.append(k)
+        pass

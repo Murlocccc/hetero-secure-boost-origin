@@ -239,6 +239,26 @@ class HeteroDecisionTreeHost(DecisionTree):
         for nid in duplicated_nodes:
             del self.split_maskdict[nid]
 
+
+    def output_tree_struct(self):
+        for i in range(len(self.tree_)):
+            if self.tree_[i].is_leaf is True:
+                
+                continue
+
+            if self.tree_[i].sitename == self.sitename:
+                fid = self.decode("feature_idx", self.tree_[i].fid, split_maskdict=self.split_maskdict)
+                bid = self.decode("feature_val", self.tree_[i].bid, self.tree_[i].id, self.split_maskdict)
+
+                # 输出host本地节点的相关信息，包括结点id，分裂使用的特征，以及对应的特征值
+                LOGGER.debug('ATTACK: the feature [{}](fid = {}) is used to split the node_{} with val [{}]'.format(
+                    self.data_bin.schema['header'][fid],self.tree_[i].fid, self.tree_[i].id, self.bin_split_points[fid][bid]))
+
+                real_splitval = self.encode("feature_val", self.bin_split_points[fid][bid], self.tree_[i].id)
+                self.tree_[i].bid = real_splitval
+
+                split_nid_used.append(self.tree_[i].id)
+
     def convert_bin_to_real(self):
         LOGGER.info("convert tree node bins to real value")
         split_nid_used = []
@@ -457,4 +477,4 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.min_leaf_node = model_meta.min_leaf_node
 
     def save_final_dispatch(self, k, v, writer: csv.writer):
-        writer.writerow([str(k), str(v[1])])
+        return (k,writer.writerow([str(k), str(v[1])]))
