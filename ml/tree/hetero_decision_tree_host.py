@@ -13,6 +13,8 @@ import csv
 import copy
 import os
 
+from ml.secureprotol.fate_paillier import PaillierEncryptedNumber
+
 LOGGER = MyLoggerFactory().get_logger()
 class HeteroDecisionTreeHost(DecisionTree):
     def __init__(self, tree_param):
@@ -139,6 +141,11 @@ class HeteroDecisionTreeHost(DecisionTree):
         #                   role=consts.GUEST,
         #                   idx=-1)
 
+    def best_splitinfo_host_remove_random(self, best_splitinfo_host, random_params):
+        for i in range(len(best_splitinfo_host)):
+            best_splitinfo_host[i] = (best_splitinfo_host[i][0], best_splitinfo_host[i][1]/random_params[i])
+        return best_splitinfo_host
+
     def sync_federated_best_splitinfo_host(self, dep=-1, batch=-1):
         LOGGER.info("get federated best splitinfo of depth {}, batch {}".format(dep, batch))
         
@@ -156,6 +163,7 @@ class HeteroDecisionTreeHost(DecisionTree):
         final_splitinfos = []
         for i in range(len(splitinfo_host)):
             best_idx, best_gain = federated_best_splitinfo_host[i]
+            LOGGER.debug("sync_final_splitinfo_host get best_idx is {}, best_gain={}".format(best_idx, best_gain))
             if best_idx != -1:
                 assert splitinfo_host[i][best_idx].sitename == self.sitename
                 splitinfo = splitinfo_host[i][best_idx]
@@ -165,7 +173,6 @@ class HeteroDecisionTreeHost(DecisionTree):
                 splitinfo.gain = best_gain
             else:
                 splitinfo = SplitInfo(sitename=self.sitename, best_fid=-1, best_bid=-1, gain=best_gain)
-
             final_splitinfos.append(splitinfo)
 
         self.transfer_inst.send_data_to_guest(final_splitinfos)
@@ -366,13 +373,14 @@ class HeteroDecisionTreeHost(DecisionTree):
 
                 acc_histograms = self.get_histograms(node_map=node_map)
 
-                splitinfo_host, encrypted_splitinfo_host = self.splitter.find_split_host(acc_histograms,
+                splitinfo_host, encrypted_splitinfo_host, random_k = self.splitter.find_split_host(acc_histograms,
                                                                                          self.valid_features,
                                                                                          self.sitename)
 
                 self.sync_encrypted_splitinfo_host(encrypted_splitinfo_host, dep, batch)
                 federated_best_splitinfo_host = self.sync_federated_best_splitinfo_host(dep, batch)
-                self.sync_final_splitinfo_host(splitinfo_host, federated_best_splitinfo_host, dep, batch)
+                federated_best_splitinfo_host_without_random = self.best_splitinfo_host_remove_random(federated_best_splitinfo_host, random_k)
+                self.sync_final_splitinfo_host(splitinfo_host, federated_best_splitinfo_host_without_random, dep, batch)
 
                 batch += 1
             
@@ -397,13 +405,14 @@ class HeteroDecisionTreeHost(DecisionTree):
     def predict(self, data_inst):
         LOGGER.info("start to predict!")
         site_guest_send_times = 0
+        LOGGER.debug(f"type data_inst ={type(data_inst)}")
         while True:
             finish_tag = self.sync_predict_finish_tag(site_guest_send_times)
             if finish_tag is True:
                 break
             
             predict_data = self.sync_predict_data(site_guest_send_times)
-
+            LOGGER.debug(f"type predict_data ={type(predict_data)}")
             traverse_tree = functools.partial(self.traverse_tree,
                                               tree_=self.tree_,
                                               decoder=self.decode,
@@ -416,6 +425,46 @@ class HeteroDecisionTreeHost(DecisionTree):
             site_guest_send_times += 1
         
         LOGGER.info("predict finish!")
+
+
+    @staticmethod
+    def traverse_tree_v2(data_inst, tree_=None,
+                      decoder=None, split_maskdict=None, sitename=consts.HOST):
+        def traverse_tree_dfs(nid, flag):
+            nonlocal tree_, sitename
+            if tree_[nid].is_leaf:
+                return [flag]
+            if tree_[nid].sitename == sitename:
+                fid = decoder("feature_idx", tree_[nid].fid, split_maskdict=split_maskdict)
+                bid = decoder("feature_val", tree_[nid].bid, nid, split_maskdict)
+                left_flag, right_flag = False, False
+                if data_inst.features.get_data(fid, 0) <= bid:
+                    left_flag = True
+                else:
+                    right_flag = True
+                return traverse_tree_dfs(tree_[nid].left_nodeid, left_flag and flag) \
+                    + traverse_tree_dfs(tree_[nid].right_nodeid, right_flag and flag) 
+            return traverse_tree_dfs(tree_[nid].left_nodeid, flag) + traverse_tree_dfs(tree_[nid].right_nodeid, flag) 
+        predict_leaf_result = traverse_tree_dfs(0, True)
+        return predict_leaf_result
+
+
+    def sync_data_predicted_by_host_v2(self, predict_data):
+        LOGGER.info("send predicted data by host")
+        self.transfer_inst.send_data_to_guest(predict_data)
+
+    def predict_v2(self, data_inst):
+        LOGGER.info("start to predict_v2!")
+        LOGGER.debug(f"type data_inst ={type(data_inst)}")
+        
+        traverse_tree = functools.partial(self.traverse_tree_v2,
+                                            tree_=self.tree_,
+                                            decoder=self.decode,
+                                            split_maskdict=self.split_maskdict,
+                                            sitename=self.sitename)
+        predict_data = data_inst.mapValues(traverse_tree)
+        self.sync_data_predicted_by_host_v2(predict_data)
+        LOGGER.info("predict_v2 finish!")
 
     def get_model(self):
         model_meta = self.get_model_meta()

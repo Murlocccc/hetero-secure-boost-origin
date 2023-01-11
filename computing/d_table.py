@@ -42,6 +42,9 @@ class DTable(CTableABC):
     def collect(self, **kargs) -> typing.Iterator:
         return self.__data.items()
 
+    def sort_collect(self, **kargs) -> typing.Iterator:
+        return sorted(self.__data.items())
+
     def take(self, n: int=1, **kargs) -> list:
         ret_val = []
         for i, k in enumerate(self.__data.keys()):

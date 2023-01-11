@@ -334,4 +334,8 @@ class PaillierEncryptedNumber(object):
         
         return PaillierEncryptedNumber(self.public_key, ciphertext, exponent)
 
-        
+    @staticmethod
+    def check(obj):
+        if not isinstance(obj, PaillierEncryptedNumber):
+            raise TypeError("encrypted_number should be an PaillierEncryptedNumber, \
+                             not: %s" % type(obj))

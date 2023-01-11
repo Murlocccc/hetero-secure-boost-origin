@@ -5,6 +5,7 @@ from ml.tree.creterion import XgboostCriterion
 from computing.d_table import DTable
 from ml.utils import consts
 from ml.tree.node import SplitInfo
+import random
 
 LOGGER = MyLoggerFactory().get_logger()
 class Splitter():
@@ -86,6 +87,7 @@ class Splitter():
     def find_split_single_histogram_host(self, histogram, valid_features, sitename):
         node_splitinfo = []
         node_grad_hess = []
+        random_k = random.random() + 1e-3
         for fid in range(len(histogram)):
             if valid_features[fid] is False:
                 continue
@@ -96,22 +98,35 @@ class Splitter():
 
             if node_cnt < self.min_sample_split:
                 break
-
+            
+            sum_grad = histogram[fid][bin_num-1][0]
+            sum_hess = histogram[fid][bin_num-1][1]
             for bid in range(bin_num):
                 sum_grad_l = histogram[fid][bid][0]
                 sum_hess_l = histogram[fid][bid][1]
                 node_cnt_l = histogram[fid][bid][2]
 
+                sum_grad_r = sum_grad - sum_grad_l
+                sum_hess_r = sum_hess - sum_hess_l
                 node_cnt_r = node_cnt - node_cnt_l
 
                 if node_cnt_l >= self.min_leaf_node and node_cnt_r >= self.min_leaf_node:
                     splitinfo = SplitInfo(sitename=sitename, best_fid=fid,
                                           best_bid=bid, sum_grad=sum_grad_l, sum_hess=sum_hess_l)
+                    random_grad_l = random.random() + 1e-3
+                    random_grad_r = random.random() + 1e-3
+                    random_hess_l = random_grad_l * random_grad_l / random_k
+                    random_hess_r = random_grad_r * random_grad_r / random_k
 
+                    sum_grad_l = sum_grad_l * random_grad_l
+                    sum_hess_l = (sum_hess_l + self.criterion.reg_lambda) * random_hess_l
+                    sum_grad_r = sum_grad_r * random_grad_r
+                    sum_hess_r = (sum_hess_r + self.criterion.reg_lambda) * random_hess_r
+                    
                     node_splitinfo.append(splitinfo)
-                    node_grad_hess.append((sum_grad_l, sum_hess_l))
+                    node_grad_hess.append((sum_grad_l, sum_hess_l, sum_grad_r, sum_hess_r))
 
-        return node_splitinfo, node_grad_hess
+        return node_splitinfo, node_grad_hess, random_k
 
     def find_split_host(self, histograms, valid_features, sitename=consts.HOST):
         LOGGER.info("splitter find split of host")
@@ -121,12 +136,14 @@ class Splitter():
 
         tree_node_splitinfo = []
         encrypted_node_grad_hess = []
+        random_params = []
 
         for _, splitinfo in host_splitinfo_table.collect():
             tree_node_splitinfo.append(splitinfo[0])
             encrypted_node_grad_hess.append(splitinfo[1])
+            random_params.append(splitinfo[2])
 
-        return tree_node_splitinfo, encrypted_node_grad_hess
+        return tree_node_splitinfo, encrypted_node_grad_hess, random_params
 
     def node_gain(self, grad, hess):
         return self.criterion.node_gain(grad, hess)
@@ -137,4 +154,11 @@ class Splitter():
     def split_gain(self, sum_grad, sum_hess, sum_grad_l, sum_hess_l, sum_grad_r, sum_hess_r):
         gain = self.criterion.split_gain([sum_grad, sum_hess], \
                                          [sum_grad_l, sum_hess_l], [sum_grad_r, sum_hess_r])
+        return gain
+
+    def split_gain_host(self, sum_grad, sum_hess, sum_grad_l, sum_hess_l, sum_grad_r, sum_hess_r):
+        gain = self.criterion.split_gain_host([sum_grad, sum_hess], \
+                                         [sum_grad_l, sum_hess_l], [sum_grad_r, sum_hess_r])
+        # gain = self.criterion.split_gain_host([sum_grad, sum_hess], \
+        #                                  [sum_grad_l, sum_hess_l], [sum_grad_r, sum_hess_r])
         return gain

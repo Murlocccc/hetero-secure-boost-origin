@@ -50,5 +50,16 @@ class XgboostCriterion(Criterion):
     def node_gain(self, sum_grad:float, sum_hess:float):
         return sum_grad * sum_grad / (sum_hess + self.reg_lambda)
 
+    def split_gain_host(self, node_sum:list, left_node_sum:list, right_node_sum:list):
+        sum_grad, sum_hess = node_sum
+        left_node_sum_grad, left_node_sum_hess = left_node_sum
+        right_node_sum_grad, right_node_sum_hess = right_node_sum
+        return self.node_gain_host(left_node_sum_grad, left_node_sum_hess) + \
+               self.node_gain_host(right_node_sum_grad, right_node_sum_hess) - \
+               self.node_gain_host(sum_grad, sum_hess)
+
+    def node_gain_host(self, sum_grad:float, sum_hess:float):
+        return sum_grad * sum_grad / sum_hess
+
     def node_weight(self, sum_grad:float, sum_hess:float):
         return -sum_grad / (self.reg_lambda + sum_hess)

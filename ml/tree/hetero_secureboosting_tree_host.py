@@ -119,6 +119,7 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
     def predict(self, data_instances, predict_param=None):
         LOGGER.info("start predict")
         data_instances = self.data_alignment(data_instances)
+        LOGGER.info(f"predict item = {len(data_instances.collect())}")
         rounds = len(self.trees_) // self.tree_dim
         for i in range(rounds):
             # n_tree = self.trees_[i]
@@ -131,5 +132,6 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
                 tree_inst.set_transfer_inst(self.transfer_inst)
 
                 tree_inst.predict(data_instances)
+                tree_inst.predict_v2(data_instances)
 
         LOGGER.info("end predict")

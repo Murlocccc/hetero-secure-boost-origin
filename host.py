@@ -18,9 +18,21 @@ import time
 
 my_logger = MyLoggerFactory.build("host")
 
+# def getArgs():
+#     argv = sys.argv[1:]
+#     return argv
+
 def getArgs():
-    argv = sys.argv[1:]
-    return argv
+    import argparse
+    parser = argparse.ArgumentParser(description='secureboost cmd')
+    parser.add_argument("--dataset", type=str, help="pre define dataset", default="")
+    parser.add_argument('--train_file', type=str, help='path for train file', default="")
+    parser.add_argument('--test_file', type=str, help='path for test file', default="")
+    parser.add_argument('--port', type=int, help='the port for federation', default=10086)
+    parser.add_argument('--run_time_idx', type=int, help='the idx of the host', default=0)
+    parser.add_argument('--encrypt', type=str, help='select the add HE style: Paillier | Plaintext', default="Plaintext")
+    args = parser.parse_args(sys.argv[1:])
+    return args
 
 def test_hetero_seucre_boost_host():
 
@@ -41,11 +53,18 @@ def test_hetero_seucre_boost_host():
     # python host.py data/vehicle_scale_hetero/vehicle_scale_hetero_train_host0.csv data/vehicle_scale_hetero/vehicle_scale_hetero_test_host0.csv 10086 0
 
     # 获取命令行参数
-    argv = getArgs()
-    train_csv_address = argv[0]
-    test_csv_address = argv[1]
-    port = int(argv[2])
-    run_time_idx = int(argv[3])
+    args = getArgs()
+    if len(args.dataset) > 0:
+        if args.dataset not in DATASET_DICT:
+            my_logger.error(f"dataset error! {args.dataset} haven't not set")
+            exit(1)
+        train_csv_address = DATASET_DICT[args.dataset]['train_file']
+        test_csv_address = DATASET_DICT[args.dataset]['test_file']
+    else:
+        train_csv_address = args.train_file
+        test_csv_address = args.test_file
+    port = args.port
+    run_time_idx = args.run_time_idx
 
     # 记录一些参数设置到日志
     my_logger.info('here is the host_{}'.format(run_time_idx))

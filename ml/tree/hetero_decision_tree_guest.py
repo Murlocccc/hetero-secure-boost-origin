@@ -14,6 +14,7 @@ import functools
 import numpy as np
 import os
 import time
+import random
 
 LOGGER = MyLoggerFactory().get_logger()
 
@@ -225,37 +226,50 @@ class HeteroDecisionTreeGuest(DecisionTree):
         cur_split_node, encrypted_splitinfo_host = value
         sum_grad = cur_split_node.sum_grad
         sum_hess = cur_split_node.sum_hess
-        best_gain = self.min_impurity_split - consts.FLOAT_ZERO
+        # best_gain = self.min_impurity_split - consts.FLOAT_ZERO
+        best_gain = -100000000
         best_idx = -1
 
         for i in range(len(encrypted_splitinfo_host)):
-            sum_grad_l, sum_hess_l = encrypted_splitinfo_host[i]
+
+            sum_grad_l, sum_hess_l, sum_grad_r, sum_hess_r = encrypted_splitinfo_host[i]
             sum_grad_l = self.decrypt(sum_grad_l)
             sum_hess_l = self.decrypt(sum_hess_l)
-            sum_grad_r = sum_grad - sum_grad_l
-            sum_hess_r = sum_hess - sum_hess_l
-            gain = self.splitter.split_gain(sum_grad, sum_hess, sum_grad_l,
+            sum_grad_r = self.decrypt(sum_grad_r)
+            sum_hess_r = self.decrypt(sum_hess_r)
+
+
+            # gain = self.splitter.split_gain(sum_grad, sum_hess, sum_grad_l,
+            #                                 sum_hess_l, sum_grad_r, sum_hess_r)
+            gain = self.splitter.split_gain_host(sum_grad, sum_hess, sum_grad_l,
                                             sum_hess_l, sum_grad_r, sum_hess_r)
 
-            if gain > self.min_impurity_split and gain > best_gain:
+            if gain > best_gain:
                 best_gain = gain
                 best_idx = i
 
+        random_eta = random.random() + 1e-1
+        best_gain = best_gain * random_eta
+        if best_idx==-1:
+            assert abs(best_gain+100000000) < 1e-5
         best_gain = self.encrypt(best_gain)
-        return best_idx, best_gain
+        
+        return best_idx, best_gain, random_eta
 
     def federated_find_split(self, dep=-1, batch=-1):
         LOGGER.info("federated find split of depth {}, batch {}".format(dep, batch))
         encrypted_splitinfo_host = self.sync_encrypted_splitinfo_host(dep, batch)
-
+        random_eta = []
         for i in range(len(encrypted_splitinfo_host)):
             encrypted_splitinfo_host_table = DTable(
                 False, list(zip(self.cur_split_nodes, encrypted_splitinfo_host[i])))
-
+            # splitinfos (index,(encrypt(best_idx, encrypy(best_gain))) -> 每个host都会得到自己最佳的idx，
             splitinfos = encrypted_splitinfo_host_table.mapValues(self.find_host_split).collect()
-            best_splitinfo_host = [splitinfo[1] for splitinfo in splitinfos]
-
+            random_eta.append([splitinfo[1][2] for splitinfo in splitinfos])
+            best_splitinfo_host = [splitinfo[1][:2] for splitinfo in splitinfos]
+            # -> 每个host都会得到自己最佳的idx
             self.sync_federated_best_splitinfo_host(best_splitinfo_host, dep, batch, i)
+        return random_eta
 
     def sync_final_split_host(self, dep=-1, batch=-1):
         LOGGER.info("get host final splitinfo of depth {}, batch {}".format(dep, batch))
@@ -434,18 +448,29 @@ class HeteroDecisionTreeGuest(DecisionTree):
         encrypted_grad_and_hess = self.encrypted_mode_calculator.encrypt(self.grad_and_hess)
         return encrypted_grad_and_hess
 
+    def splitinfo_host_remove_random_eta(self, splitinfo_host, random_eta):
+        for i in range(len(splitinfo_host)):
+            for j in range(len(splitinfo_host[i])):
+                splitinfo_host[i][j].gain = self.decrypt(splitinfo_host[i][j].gain)
+                splitinfo_host[i][j].gain = splitinfo_host[i][j].gain / random_eta[i][j]
+        return splitinfo_host
+
     def find_best_split_guest_and_host(self, splitinfo_guest_host):
         best_gain_host = -1000000000
         best_gain_host_idx = 0
         for i in range(1, len(splitinfo_guest_host)):
-            gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
+            # gain_host_i = self.decrypt(splitinfo_guest_host[i].gain)
+            gain_host_i = splitinfo_guest_host[i].gain
             if best_gain_host < gain_host_i:
                 best_gain_host = gain_host_i
                 best_gain_host_idx = i
 
+        LOGGER.debug(f"best_gain_host={best_gain_host} best_gain_host_idx={best_gain_host_idx} splitinfo_guest_gain={splitinfo_guest_host[0].gain}")
         if splitinfo_guest_host[0].gain >= best_gain_host - consts.FLOAT_ZERO:
             best_splitinfo = splitinfo_guest_host[0]
         else:
+            LOGGER.debug(f"type splitinfo_guest_host[best_gain_host_idx].sum_grad = {type(splitinfo_guest_host[best_gain_host_idx].sum_grad)}")
+            LOGGER.debug(f"type splitinfo_guest_host[best_gain_host_idx].best_fid = {splitinfo_guest_host[best_gain_host_idx].best_fid}")
             best_splitinfo = splitinfo_guest_host[best_gain_host_idx]
             best_splitinfo.sum_grad = self.decrypt(best_splitinfo.sum_grad)
             best_splitinfo.sum_hess = self.decrypt(best_splitinfo.sum_hess)
@@ -509,11 +534,14 @@ class HeteroDecisionTreeGuest(DecisionTree):
 
                 self.best_splitinfo_guest = self.splitter.find_split(acc_histograms, self.valid_features)
 
-                self.federated_find_split(dep, batch)
+                randome_eta = self.federated_find_split(dep, batch)
                 final_splitinfo_host = self.sync_final_split_host(dep, batch)
                 if self.is_first:
                     final_splitinfo_host = []
-                cur_splitinfos = self.merge_splitinfo(self.best_splitinfo_guest, final_splitinfo_host)
+                # 去掉随机数
+                final_splitinfo_host_without_eta = self.splitinfo_host_remove_random_eta(final_splitinfo_host, randome_eta)
+
+                cur_splitinfos = self.merge_splitinfo(self.best_splitinfo_guest, final_splitinfo_host_without_eta)
                 splitinfos.extend(cur_splitinfos)
 
                 batch += 1
@@ -689,11 +717,69 @@ class HeteroDecisionTreeGuest(DecisionTree):
         LOGGER.info("predict finish!")
         return predict_result
 
+    @staticmethod
+    def traverse_tree_v2(data_inst, tree_=None,
+                      decoder=None, split_maskdict=None):
+        def traverse_tree_dfs(nid, flag):
+            nonlocal tree_
+            if tree_[nid].is_leaf:
+                return [(flag, tree_[nid].weight)]
+            if tree_[nid].sitename == consts.GUEST:
+                fid = decoder("feature_idx", tree_[nid].fid, split_maskdict=split_maskdict)
+                bid = decoder("feature_val", tree_[nid].bid, nid, split_maskdict)
+                left_flag, right_flag = False, False
+                if data_inst.features.get_data(fid, 0) <= bid:
+                    left_flag = True
+                else:
+                    right_flag = True
+                return traverse_tree_dfs(tree_[nid].left_nodeid, left_flag and flag) \
+                    + traverse_tree_dfs(tree_[nid].right_nodeid, right_flag and flag) 
+            return traverse_tree_dfs(tree_[nid].left_nodeid, flag) + traverse_tree_dfs(tree_[nid].right_nodeid, flag) 
+        predict_leaf_result = traverse_tree_dfs(0, True)
+        return predict_leaf_result
+
+
+    def sync_data_predicted_by_host_v2(self, send_times):
+
+        predict_data = self.transfer_inst.recv_data_from_hosts(-1)
+
+        LOGGER.info("get predicted data by host, recv times is {}".format(send_times))
+        # predict_data = federation.get(name=self.transfer_inst.predict_data_by_host.name,
+        #                               tag=self.transfer_inst.generate_transferid(
+        #                                   self.transfer_inst.predict_data_by_host, send_times),
+        #                               idx=-1)
+        return predict_data
+
+    @staticmethod
+    def merge_predict_result(predict_leaf_result1, predict_leaf_result2):
+        assert len(predict_leaf_result1) == len(predict_leaf_result2)
+        n = len(predict_leaf_result1) 
+        return [(predict_leaf_result1[i][0] and predict_leaf_result2[i], predict_leaf_result1[i][1]) for i in range(n)]
+
+    def predict_v2(self, data_instances):
+        LOGGER.info("start to predict!")
+        predict_data = data_instances.mapValues(lambda data_inst: (0, 1))
+        site_host_send_times = 0
+        predict_result = None
+
+        traverse_tree = functools.partial(self.traverse_tree_v2,
+                                            tree_=self.tree_,
+                                            decoder=self.decode,
+                                            split_maskdict=self.split_maskdict)
+        predict_data = data_instances.mapValues(traverse_tree)
+
+        predict_data_host = self.sync_data_predicted_by_host_v2(site_host_send_times)
+        for i in range(len(predict_data_host)):
+            predict_data = predict_data.join(predict_data_host[i], self.merge_predict_result)
+        predict_result = predict_data.mapValues(lambda pre_list: sum([value for flag,value in pre_list if flag is True]))
+        LOGGER.info("predict_v2 finish!")
+        return predict_result
+
     def set_y(self, y: DTable):
         self.y = y
 
     def save_node_dispatch(self):
-        LOGGER.debug(f"node_dispatch !! = [{str(self.node_dispatch)}]")
+        # LOGGER.debug(f"node_dispatch !! = [{str(self.node_dispatch)}]")
         now_dep_node_dispatch = self.node_dispatch.mapValues(lambda x:x[1]).collect()
         for k,v in now_dep_node_dispatch:
             self.tree_[v].node_dispatch.append(k)

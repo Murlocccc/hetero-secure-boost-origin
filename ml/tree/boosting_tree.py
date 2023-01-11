@@ -30,7 +30,7 @@ class BoostingTree(ModelBase):
         self.role = ''
         self.mode = consts.HETERO
         self.transfer_inst = None
-        self.model_param = BoostingTreeParam()
+        self.model_param = BoostingTreeParam(num_trees=5)
 
     def _init_model(self, boostingtree_param):
         self.tree_param = boostingtree_param.tree_param

@@ -16,6 +16,8 @@ import numpy as np
 import functools
 import copy
 from numpy import random
+import time
+from tqdm import tqdm
 
 LOGGER = MyLoggerFactory().get_logger()
 
@@ -256,12 +258,21 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
 
         self.sync_tree_dim()
 
-        for i in range(self.num_trees):
+        logging_time = time.strftime('%Y-%m-%d-%H_%M_%S')
+        for i in tqdm(range(self.num_trees)):
             # n_tree = []
             self.compute_grad_and_hess()
+
+            with open(f"./log/grad_and_hess_{logging_time}_TREE_{i}.log",'a') as wf:
+                for item in self.grad_and_hess.collect():
+                    wf.write(f"{item[0]},{item[1][0][0]},{item[1][1][0]}")
+                    wf.write("\n")
+
             for tidx in range(self.tree_dim):
                 LOGGER.info('============TREE_{}.{} START=============='.format(i, tidx))
-                tree_inst = HeteroDecisionTreeGuest(self.tree_param, i==0)
+                # tree_inst = HeteroDecisionTreeGuest(self.tree_param, i==0)
+                tree_inst = HeteroDecisionTreeGuest(self.tree_param)
+
 
                 tree_inst.set_inputinfo(self.data_bin, self.get_grad_and_hess(tidx), self.bin_split_points,
                                         self.bin_sparse_points)
@@ -315,11 +326,14 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
                 tree_inst.set_transfer_inst(self.transfer_inst)
 
                 predict_data = tree_inst.predict(data_instances)
+                predict_data_v2 = tree_inst.predict_v2(data_instances)
+                assert str(predict_data.sort_collect())==str(predict_data_v2.sort_collect())
                 self.update_f_value(new_f=predict_data, tidx=tidx)
 
     def predict(self, data_instances:DTable):
         LOGGER.info("start predict")
         data_instances = self.data_alignment(data_instances)
+        LOGGER.info(f"predict item = {len(data_instances.collect())}")
         self.predict_f_value(data_instances)
         if self.task_type == consts.CLASSIFICATION:
             loss_method = self.loss
