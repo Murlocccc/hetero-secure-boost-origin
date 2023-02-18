@@ -14,6 +14,8 @@ import copy
 import os
 
 from ml.secureprotol.fate_paillier import PaillierEncryptedNumber
+from collections import defaultdict
+
 
 LOGGER = MyLoggerFactory().get_logger()
 class HeteroDecisionTreeHost(DecisionTree):
@@ -45,6 +47,10 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.tree_ = None
         self.runtime_idx = 0
         self.sitename = consts.HOST
+
+
+        self.tmp_flag = True
+        self.tmp_predict_vec = dict()
 
     def set_flowid(self, flowid=0):
         LOGGER.info("set flowid, flowid is {}".format(flowid))
@@ -392,13 +398,18 @@ class HeteroDecisionTreeHost(DecisionTree):
         self.convert_bin_to_real()
 
         # 把实例空间和叶子节点的关联情况输出到文件
-        file_name = self.node_dispatch_log_path + time.strftime("host{}_%Y-%m-%d-%H_%M_%S".format(self.runtime_idx)) + self.flow_id + '.csv'
-        f = open(file_name, 'w', newline='', encoding='utf-8')
-        writer = csv.writer(f)
-        writer.writerow(['inst_id', 'node_id'])
-        func = functools.partial(self.save_final_dispatch, writer=writer)
-        final_dispatch.map(func)
-        f.close()
+        # DEBUG_OUTPUT
+        # file_name = self.node_dispatch_log_path + time.strftime("host{}_%Y-%m-%d-%H_%M_%S".format(self.runtime_idx)) + self.flow_id + '.csv'
+        # f = open(file_name, 'w', newline='', encoding='utf-8')
+        # writer = csv.writer(f)
+        # writer.writerow(['inst_id', 'node_id'])
+        # func = functools.partial(self.save_final_dispatch, writer=writer)
+        # final_dispatch.map(func)
+        # f.close()
+        if self.tmp_flag:
+            self.tmp_nodeset = defaultdict(list)
+            for node in final_dispatch.collect():
+                self.tmp_nodeset[f"node_{node[1][1]}"].append(node[0])
 
         LOGGER.info("end to fit guest decision tree")
 
@@ -433,7 +444,8 @@ class HeteroDecisionTreeHost(DecisionTree):
         def traverse_tree_dfs(nid, flag):
             nonlocal tree_, sitename
             if tree_[nid].is_leaf:
-                return [flag]
+                return [[nid,flag]]
+                # return [flag]
             if tree_[nid].sitename == sitename:
                 fid = decoder("feature_idx", tree_[nid].fid, split_maskdict=split_maskdict)
                 bid = decoder("feature_val", tree_[nid].bid, nid, split_maskdict)
@@ -463,7 +475,15 @@ class HeteroDecisionTreeHost(DecisionTree):
                                             split_maskdict=self.split_maskdict,
                                             sitename=self.sitename)
         predict_data = data_inst.mapValues(traverse_tree)
-        self.sync_data_predicted_by_host_v2(predict_data)
+        if self.tmp_flag:
+            predict_data_col = list(predict_data.collect())
+            data_inst_col = list(data_inst.collect())
+            LOGGER.debug(f"{data_inst_col[0]}")
+            LOGGER.debug(f"{predict_data_col[0]}")
+            for index in range(len(predict_data_col)):
+                self.tmp_predict_vec[data_inst_col[index][1].inst_id] = [v[0] for v in predict_data_col[index][1] if v[1]==True ]
+        real_predict_data = predict_data.mapValues(lambda v: [x[1] for x in v])
+        self.sync_data_predicted_by_host_v2(real_predict_data)
         LOGGER.info("predict_v2 finish!")
 
     def get_model(self):
@@ -527,3 +547,9 @@ class HeteroDecisionTreeHost(DecisionTree):
 
     def save_final_dispatch(self, k, v, writer: csv.writer):
         return (k,writer.writerow([str(k), str(v[1])]))
+    
+    def get_nodeset(self):
+        return self.tmp_nodeset
+    
+    def get_predict_vec(self):
+        return self.tmp_predict_vec

@@ -18,6 +18,7 @@ import random
 import sys
 import time
 import argparse
+import json
 
 my_logger = MyLoggerFactory.build("guest")
 
@@ -116,6 +117,14 @@ def test_hetero_secure_boost_guest():
     for i, feature in enumerate(features2):
         inst = Instance(inst_id=ids2[i], features=feature, label=lables2[i])
         test_instances.append(inst)
+
+
+    # DEBUT_OUTPUT
+    label_vec = dict()
+    for inst in train_instances:
+        label_vec[inst.inst_id] = inst.label
+    for inst in test_instances:
+        label_vec[inst.inst_id] = inst.label    
     
     # 使用上面得到的 Instance 的列表转化为 DTable 对象
     train_instances = DTable(False, train_instances)
@@ -167,6 +176,27 @@ def test_hetero_secure_boost_guest():
     # 计算并输出混淆矩阵
     statistic = predict_result.mapPartitions(cal_statistic).reduce(lambda a, b: a + b)
     my_logger.info('(TP, TN, FP, FN) is {}'.format(statistic))
+
+
+
+
+    tmp_dict = {
+        "dataset": {
+            "train_file": train_csv_address,
+            "test_file": test_csv_address,
+        },
+        "tree_params": {
+            "depth": hetero_secure_boost_guest.model_param.tree_param.max_depth,
+            'num_trees': hetero_secure_boost_guest.model_param.num_trees,
+            'bin_nums': hetero_secure_boost_guest.model_param.bin_num,
+        },
+        "grad_hess": hetero_secure_boost_guest.get_tree_grad_hess(),
+        "label": label_vec
+    }
+    logging_time = time.strftime('%Y-%m-%d-%H_%M_%S')  
+    with open(f"./new_log/guest_{logging_time}.json",'a') as wf:
+        json.dump(tmp_dict, wf, indent=2)
+
 
 
 def data_split(full_list, ratio, shuffle=False, random_seed=None):

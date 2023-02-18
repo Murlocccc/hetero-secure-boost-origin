@@ -19,6 +19,8 @@ from numpy import random
 import time
 from tqdm import tqdm
 
+from collections import defaultdict
+
 LOGGER = MyLoggerFactory().get_logger()
 
 class HeteroSecureBoostingTreeGuest(BoostingTree):
@@ -49,6 +51,9 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         self.runtime_idx = 0
         self.feature_importances_ = {}
         self.role = consts.GUEST
+
+        self.tmp_flag = True
+        self.tmp_grad_hess = defaultdict(list)
 
     def set_loss(self, objective_param):
         loss_type = objective_param.objective
@@ -263,10 +268,16 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             # n_tree = []
             self.compute_grad_and_hess()
 
-            with open(f"./log/grad_and_hess_{logging_time}_TREE_{i}.log",'a') as wf:
+            # DEBUG_OUTPUT
+            if self.tmp_flag:
+                new_tree_grad_hess = dict()
                 for item in self.grad_and_hess.collect():
-                    wf.write(f"{item[0]},{item[1][0][0]},{item[1][1][0]}")
-                    wf.write("\n")
+                    new_tree_grad_hess[item[0]] = [item[1][0][0], item[1][1][0]]
+                self.tmp_grad_hess[f"tree_{i}"] = new_tree_grad_hess
+            # with open(f"./log/grad_and_hess_{logging_time}_TREE_{i}.log",'a') as wf:
+            #     for item in self.grad_and_hess.collect():
+            #         wf.write(f"{item[0]},{item[1][0][0]},{item[1][1][0]}")
+            #         wf.write("\n")
 
             for tidx in range(self.tree_dim):
                 LOGGER.info('============TREE_{}.{} START=============='.format(i, tidx))
@@ -359,3 +370,5 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
 
         return predict_result
 
+    def get_tree_grad_hess(self):
+        return self.tmp_grad_hess

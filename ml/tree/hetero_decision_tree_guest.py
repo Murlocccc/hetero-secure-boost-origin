@@ -249,9 +249,12 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 best_idx = i
 
         random_eta = random.random() + 1e-1
-        best_gain = best_gain * random_eta
+        
         if best_idx==-1:
+            if abs(best_gain+100000000) < 1e-5:
+                LOGGER.warning("!!!!!")
             assert abs(best_gain+100000000) < 1e-5
+        best_gain = best_gain * random_eta
         best_gain = self.encrypt(best_gain)
         
         return best_idx, best_gain, random_eta
@@ -558,13 +561,14 @@ class HeteroDecisionTreeGuest(DecisionTree):
         self.convert_bin_to_real()
         tree_ = self.tree_
         LOGGER.info("tree node num is %d" % len(tree_))
+        # DEBUT_OTUPUT
         # 把树结构输出到文件
-        file_name = self.node_dispatch_log_path + "Tree_struction" + time.strftime("_%Y-%m-%d-%H_%M_%S".format(self.runtime_idx)) + '.log'
-        f = open(file_name, 'w', newline='', encoding='utf-8')
-        for node in self.tree_:
-            f.write(str(node))
-        f.write("\n\n\n")
-        f.close()
+        # file_name = self.node_dispatch_log_path + "Tree_struction" + time.strftime("_%Y-%m-%d-%H_%M_%S".format(self.runtime_idx)) + '.log'
+        # f = open(file_name, 'w', newline='', encoding='utf-8')
+        # for node in self.tree_:
+        #     f.write(str(node))
+        # f.write("\n\n\n")
+        # f.close()
 
         purity_list = []
         count_list = []

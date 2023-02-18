@@ -25,6 +25,10 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         self.runtime_idx = 0
         self.role = consts.HOST
 
+        self.tmp_flag = True
+        self.tmp_tree_nodeset = {}
+        self.tmp_tree_predict_vec = {}
+
     def set_runtime_idx(self, runtime_idx):
         self.runtime_idx = runtime_idx
 
@@ -107,6 +111,9 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
                     self.tree_meta = tree_meta
                 # n_tree.append(tree_inst.get_tree_model())
 
+                if self.tmp_flag:
+                    self.tmp_tree_nodeset[f"tree_{i}"] = tree_inst.get_nodeset()
+
             # self.trees_.append(n_tree)
 
             if self.n_iter_no_change is True:
@@ -134,4 +141,13 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
                 tree_inst.predict(data_instances)
                 tree_inst.predict_v2(data_instances)
 
+                if self.tmp_flag:
+                    self.tmp_tree_predict_vec[f"tree_{i}"] = tree_inst.get_predict_vec()
+
         LOGGER.info("end predict")
+
+    def get_tree_nodeset(self):
+        return self.tmp_tree_nodeset
+    
+    def get_tree_predict_vec(self):
+        return self.tmp_tree_predict_vec

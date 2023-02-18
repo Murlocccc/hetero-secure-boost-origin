@@ -14,6 +14,7 @@ from federation.transfer_inst import TransferInstHost
 import random
 import sys
 import time
+import json
 
 
 my_logger = MyLoggerFactory.build("host")
@@ -118,6 +119,25 @@ def test_hetero_seucre_boost_host():
 
     # predict
     hetero_secure_boost_host.predict(test_instances)
+    
+
+
+    tmp_dict = {
+        "dataset": {
+            "train_file": train_csv_address,
+            "test_file": test_csv_address,
+        },
+        "tree_params": {
+            "depth": hetero_secure_boost_host.model_param.tree_param.max_depth,
+            'num_trees': hetero_secure_boost_host.model_param.num_trees,
+            'bin_nums': hetero_secure_boost_host.model_param.bin_num,
+        },
+        "trees": hetero_secure_boost_host.get_tree_nodeset(),
+        "predict_vec": hetero_secure_boost_host.get_tree_predict_vec(),
+    }
+    logging_time = time.strftime('%Y-%m-%d-%H_%M_%S')  
+    with open(f"./new_log/host{run_time_idx}_{logging_time}.json",'a') as wf:
+        json.dump(tmp_dict, wf, indent=2)
 
 def data_split(full_list, ratio, shuffle=False, random_seed=None):
     """
