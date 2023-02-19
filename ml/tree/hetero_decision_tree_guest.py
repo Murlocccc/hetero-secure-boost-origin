@@ -15,6 +15,8 @@ import numpy as np
 import os
 import time
 import random
+from collections import defaultdict
+import copy
 
 LOGGER = MyLoggerFactory().get_logger()
 
@@ -52,6 +54,10 @@ class HeteroDecisionTreeGuest(DecisionTree):
         if self.node_dispatch_log_path!= None and not os.path.exists(self.node_dispatch_log_path):
             os.mkdir(self.node_dispatch_log_path)
         LOGGER.debug("It's the first tree" if self.is_first else "It isn't the first tree")
+
+
+        self.tmp_flag = True
+        self.tmp_predict_result = {}
         
     def set_inputinfo(self, data_bin=None, grad_and_hess=None, bin_split_points=None, bin_sparse_points=None):
         LOGGER.info("set input info")
@@ -122,6 +128,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 num_totle = p_n_in_the_leaf.count()
                 # 计算纯净度（考虑 除以0 的异常）
                 purity = 0 if num_totle == 0 else max(num_totle - num_positive, num_positive) / num_totle
+                LOGGER.debug(f"calc purity {num_positive} {num_totle}")
                 # 暂存起来，用以计算相关的统计量
                 self._nodeid_purity_list.append((self.tree_node_queue[i].id, purity, num_totle))
                 # LOGGER.debug('node with id = {} is a leaf, its purity = {}'.format(self.tree_node_queue[i].id, purity))
@@ -251,10 +258,12 @@ class HeteroDecisionTreeGuest(DecisionTree):
         random_eta = random.random() + 1e-1
         
         if best_idx==-1:
-            if abs(best_gain+100000000) < 1e-5:
-                LOGGER.warning("!!!!!")
-            assert abs(best_gain+100000000) < 1e-5
-        best_gain = best_gain * random_eta
+            if abs(best_gain+100000000) > 1e-5:
+                LOGGER.warning(f"!!!!!{best_gain}")
+            assert abs(best_gain+100000000) < 1e-1
+            random_eta = 1
+        else:
+            best_gain = best_gain * random_eta
         best_gain = self.encrypt(best_gain)
         
         return best_idx, best_gain, random_eta
@@ -727,7 +736,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         def traverse_tree_dfs(nid, flag):
             nonlocal tree_
             if tree_[nid].is_leaf:
-                return [(flag, tree_[nid].weight)]
+                return [(flag, tree_[nid].weight, nid)]
             if tree_[nid].sitename == consts.GUEST:
                 fid = decoder("feature_idx", tree_[nid].fid, split_maskdict=split_maskdict)
                 bid = decoder("feature_val", tree_[nid].bid, nid, split_maskdict)
@@ -758,7 +767,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
     def merge_predict_result(predict_leaf_result1, predict_leaf_result2):
         assert len(predict_leaf_result1) == len(predict_leaf_result2)
         n = len(predict_leaf_result1) 
-        return [(predict_leaf_result1[i][0] and predict_leaf_result2[i], predict_leaf_result1[i][1]) for i in range(n)]
+        return [(predict_leaf_result1[i][0] and predict_leaf_result2[i][0], predict_leaf_result1[i][1], predict_leaf_result1[i][2]) for i in range(n)]
 
     def predict_v2(self, data_instances):
         LOGGER.info("start to predict!")
@@ -775,7 +784,14 @@ class HeteroDecisionTreeGuest(DecisionTree):
         predict_data_host = self.sync_data_predicted_by_host_v2(site_host_send_times)
         for i in range(len(predict_data_host)):
             predict_data = predict_data.join(predict_data_host[i], self.merge_predict_result)
-        predict_result = predict_data.mapValues(lambda pre_list: sum([value for flag,value in pre_list if flag is True]))
+        predict_result = predict_data.mapValues(lambda predict_list: sum([value for flag,value,_ in predict_list if flag is True]))
+        if self.tmp_flag:
+            predict_data_col = list(predict_data.mapValues(lambda predict_list: sum([nid for flag,_,nid in predict_list if flag is True])).collect())
+            data_inst_col = list(data_instances.collect())
+            LOGGER.debug(f"{data_inst_col[0]}")
+            LOGGER.debug(f"{predict_data_col[0]}")
+            for index in range(len(predict_data_col)):
+                self.tmp_predict_result[data_inst_col[index][1].inst_id] = predict_data_col[index][1]
         LOGGER.info("predict_v2 finish!")
         return predict_result
 
@@ -788,3 +804,6 @@ class HeteroDecisionTreeGuest(DecisionTree):
         for k,v in now_dep_node_dispatch:
             self.tree_[v].node_dispatch.append(k)
         pass
+
+    def get_predict_result(self):
+        return copy.deepcopy(self.tmp_predict_result)

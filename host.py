@@ -110,6 +110,12 @@ def test_hetero_seucre_boost_host():
     test_instances = DTable(False, test_instances)
     test_instances.schema['header'] = header2
 
+    map_index_to_id = {}
+    train_instances_col = list(train_instances.collect())
+    for item in  train_instances_col:
+        map_index_to_id[item[0]] = item[1].inst_id
+
+
     # 记录数据集相关信息到日志
     my_logger.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
     my_logger.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
@@ -121,7 +127,10 @@ def test_hetero_seucre_boost_host():
     hetero_secure_boost_host.predict(test_instances)
     
 
-
+    tree_nodeset = hetero_secure_boost_host.get_tree_nodeset()
+    for (tree_name, tree_value) in tree_nodeset.items():
+        for (node_name, node_value) in tree_value.items():
+            tree_nodeset[tree_name][node_name] = [map_index_to_id[inst_index] for inst_index in node_value] 
     tmp_dict = {
         "dataset": {
             "train_file": train_csv_address,
@@ -132,7 +141,7 @@ def test_hetero_seucre_boost_host():
             'num_trees': hetero_secure_boost_host.model_param.num_trees,
             'bin_nums': hetero_secure_boost_host.model_param.bin_num,
         },
-        "trees": hetero_secure_boost_host.get_tree_nodeset(),
+        "trees": tree_nodeset,
         "predict_vec": hetero_secure_boost_host.get_tree_predict_vec(),
     }
     logging_time = time.strftime('%Y-%m-%d-%H_%M_%S')  

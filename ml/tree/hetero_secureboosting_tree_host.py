@@ -7,6 +7,7 @@ from ml.feature.binning.quantile_binning import QuantileBinning
 from ml.param.feature_binning_param import FeatureBinningParam
 from ml.tree.hetero_decision_tree_host import HeteroDecisionTreeHost
 from numpy import random
+import copy
 
 LOGGER = MyLoggerFactory().get_logger()
 
@@ -147,7 +148,7 @@ class HeteroSecureBoostingTreeHost(BoostingTree):
         LOGGER.info("end predict")
 
     def get_tree_nodeset(self):
-        return self.tmp_tree_nodeset
+        return copy.deepcopy(self.tmp_tree_nodeset)
     
     def get_tree_predict_vec(self):
-        return self.tmp_tree_predict_vec
+        return copy.deepcopy(self.tmp_tree_predict_vec)

@@ -177,9 +177,11 @@ def test_hetero_secure_boost_guest():
     statistic = predict_result.mapPartitions(cal_statistic).reduce(lambda a, b: a + b)
     my_logger.info('(TP, TN, FP, FN) is {}'.format(statistic))
 
-
-
-
+    # debug output
+    tmp_predict_result = {}
+    predict_result_col = list(predict_result.collect())
+    for index in range(len(predict_result_col)):
+        tmp_predict_result[predict_result_col[index][1][-1]] = predict_result_col[index][1][1]
     tmp_dict = {
         "dataset": {
             "train_file": train_csv_address,
@@ -191,7 +193,9 @@ def test_hetero_secure_boost_guest():
             'bin_nums': hetero_secure_boost_guest.model_param.bin_num,
         },
         "grad_hess": hetero_secure_boost_guest.get_tree_grad_hess(),
-        "label": label_vec
+        "label": label_vec,
+        "predict_nid": hetero_secure_boost_guest.get_tree_predict_result(),
+        "predict_label": tmp_predict_result,
     }
     logging_time = time.strftime('%Y-%m-%d-%H_%M_%S')  
     with open(f"./new_log/guest_{logging_time}.json",'a') as wf:

@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from collections import defaultdict
 
+
 LOGGER = MyLoggerFactory().get_logger()
 
 class HeteroSecureBoostingTreeGuest(BoostingTree):
@@ -54,6 +55,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
 
         self.tmp_flag = True
         self.tmp_grad_hess = defaultdict(list)
+        self.tmp_tree_predict_result = {}
 
     def set_loss(self, objective_param):
         loss_type = objective_param.objective
@@ -338,7 +340,12 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
 
                 predict_data = tree_inst.predict(data_instances)
                 predict_data_v2 = tree_inst.predict_v2(data_instances)
+                # LOGGER.debug(str(predict_data.sort_collect()))
+                # LOGGER.debug(str(predict_data_v2.sort_collect()))
                 assert str(predict_data.sort_collect())==str(predict_data_v2.sort_collect())
+
+                if self.tmp_flag:
+                    self.tmp_tree_predict_result[f"tree_{i}"] = tree_inst.get_predict_result()
                 self.update_f_value(new_f=predict_data, tidx=tidx)
 
     def predict(self, data_instances:DTable):
@@ -352,7 +359,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
             if self.num_classes == 2:
                 predicts = self.F.mapValues(lambda f: float(loss_method.predict(f)))
                 threshold = self.predict_param.threshold
-                predict_result = data_instances.join(predicts, lambda inst, pred: [inst.label, classes_[1] if pred > threshold else classes_[0], pred, {"0": 1 - pred, "1": pred}])
+                predict_result = data_instances.join(predicts, lambda inst, pred: [inst.label, classes_[1] if pred > threshold else classes_[0], pred, {"0": 1 - pred, "1": pred}, inst.inst_id])
             else:
                 predicts = self.F.mapValues(lambda f: loss_method.predict(f).tolist())
                 predict_label = predicts.mapValues(lambda preds: classes_[np.argmax(preds)])
@@ -371,4 +378,7 @@ class HeteroSecureBoostingTreeGuest(BoostingTree):
         return predict_result
 
     def get_tree_grad_hess(self):
-        return self.tmp_grad_hess
+        return copy.deepcopy(self.tmp_grad_hess)
+    
+    def get_tree_predict_result(self):
+        return copy.deepcopy(self.tmp_tree_predict_result)
