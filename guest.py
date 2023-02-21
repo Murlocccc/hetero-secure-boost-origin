@@ -132,6 +132,12 @@ def test_hetero_secure_boost_guest():
     test_instances = DTable(False, test_instances)
     test_instances.schema['header'] = header2
 
+    # debug output
+    map_index_to_id = {}
+    train_instances_col = list(train_instances.collect())
+    for item in  train_instances_col:
+        map_index_to_id[item[0]] = item[1].inst_id
+
     # 记录数据集相关信息到日志
     my_logger.info('length of train set is {}, schema is {}'.format(train_instances.count(), train_instances.schema))
     my_logger.info('length of test set is {}, schema is {}'.format(test_instances.count(), test_instances.schema))
@@ -182,6 +188,13 @@ def test_hetero_secure_boost_guest():
     predict_result_col = list(predict_result.collect())
     for index in range(len(predict_result_col)):
         tmp_predict_result[predict_result_col[index][1][-1]] = predict_result_col[index][1][1]
+    grad_hess = hetero_secure_boost_guest.get_tree_grad_hess()
+    for (tree_name, tree_value) in grad_hess.items():
+        new_grad_hess = {}
+        for (inst_index, inst_value) in tree_value.items():
+            new_grad_hess[map_index_to_id[inst_index]] = inst_value
+        grad_hess[tree_name] = new_grad_hess
+
     tmp_dict = {
         "dataset": {
             "train_file": train_csv_address,
@@ -192,7 +205,7 @@ def test_hetero_secure_boost_guest():
             'num_trees': hetero_secure_boost_guest.model_param.num_trees,
             'bin_nums': hetero_secure_boost_guest.model_param.bin_num,
         },
-        "grad_hess": hetero_secure_boost_guest.get_tree_grad_hess(),
+        "grad_hess": grad_hess,
         "label": label_vec,
         "predict_nid": hetero_secure_boost_guest.get_tree_predict_result(),
         "predict_label": tmp_predict_result,
